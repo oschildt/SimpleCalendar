@@ -75,17 +75,22 @@ var config = {
 ```
 
 **format**
+
 The date format in PHP style
 
 **start_year**
+
 The start year of the year dropdown. If not set, the (current_year - 10) is used.
 
 **end_year**
+
 The end year of the year dropdown. If not set, the (current_year + 10) is used.
 
 **month_names**
+
 The month names. If not set, the English names are used.
 
 **weekday_names**
+
 The weekday names. If not set, the English names are used.
 
