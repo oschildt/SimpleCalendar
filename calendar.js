@@ -157,13 +157,6 @@ SimpleCalendar.create_calendar = function(field, config)
   var calendar_area = document.createElement('div');
   calendar_area.classList.add('calendar_container');
   
-  var bodyRect = document.body.getBoundingClientRect();
-  var scrollHeight = Math.max(
-    document.body.scrollHeight,
-    document.body.offsetHeight,
-    document.body.clientHeight
-  );
-
   var rect = field.getBoundingClientRect();
   calendar_area.style.top = Math.round(rect.top + rect.height + 1 + window.pageYOffset) + 'px';
   calendar_area.style.left = Math.round(rect.left) + 'px';
