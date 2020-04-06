@@ -371,7 +371,7 @@ SimpleCalendar.assign = function (field, config) {
 
     let date = new Date();
 
-    if (!config.format) config.format = "d.m.Y";
+    if (!config.format) config.format = "Y-m-d";
     if (!config.start_year) config.start_year = date.getFullYear() - 10;
     if (!config.end_year) config.end_year = date.getFullYear() + 10;
 
