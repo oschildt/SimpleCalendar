@@ -78,7 +78,7 @@ var config = {
 
 **format**
 
-The date format in PHP style
+The date format in PHP style. If not set, the format Y-m-d is used.
 
 **start_year**
 
