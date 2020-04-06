@@ -36,8 +36,8 @@ Init the fields passing the field ID string or the object variable:
 
 ```
 window.onload = function () {
-  SimpleCalendar.init_field("begin_date", config);
-  SimpleCalendar.init_field("end_date", config);
+  SimpleCalendar.assign("begin_date", config);
+  SimpleCalendar.assign("end_date", config);
 }
 ```
 
