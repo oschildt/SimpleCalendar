@@ -1,5 +1,44 @@
+/**
+ * @file
+ * The file contains implementation of the simple calendar.
+ *
+ * @author
+ * Oleg Schildt
+ */
+
+/**
+ * The namespace for the simple calendar.
+ *
+ * @namespace SimpleCalendar
+ *
+ * @tutorial 5.using_calendar
+ *
+ * @author
+ * Oleg Schildt
+ */
+
 let SimpleCalendar = {};
 
+
+/**
+ * The function is used to add an event listener to a DOM object.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} oEmt
+ * DOM node the event should be added.
+ *
+ * @param {string} sEvt
+ * Name of the event.
+ *
+ * @param {eventCallback} act
+ * Callback function to be called if the event occurs.
+ *
+ * @see SimpleCalendar.fire_event
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.add_event = function (oEmt, sEvt, act) {
     if (!oEmt) return;
     if (oEmt.addEventListener)
@@ -10,6 +49,22 @@ SimpleCalendar.add_event = function (oEmt, sEvt, act) {
         oEmt['on' + sEvt] = act;
 };
 
+/**
+ * The function is used to fire an event.
+ *
+ *  @protected
+ *
+ * @param {HTMLElement} oEmt
+ * DOM node the event should be fired.
+ *
+ * @param {string} sEvt
+ * Name of the event to be fired.
+ *
+ * @see SimpleCalendar.add_event
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.fire_event = function (oEmt, sEvt) {
     if ("createEvent" in document) {
         let evt = document.createEvent("HTMLEvents");
@@ -19,6 +74,24 @@ SimpleCalendar.fire_event = function (oEmt, sEvt) {
         oEmt.fireEvent('on' + sEvt);
 };
 
+/**
+ * The function is used to validate date parts, whether they comprise a valid date.
+ *
+ * @param {int} day
+ * Day of the date.
+ *
+ * @param {int} month
+ * Month of the date.
+ *
+ * @param {int} year
+ * Year of the date.
+ *
+ * @returns {boolean}
+ * Returns True if the date is valid, otherwise False.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.validate_date = function (day, month, year) {
     if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
     if (month < 1 || month > 12) {
@@ -34,37 +107,71 @@ SimpleCalendar.validate_date = function (day, month, year) {
     return true;
 };
 
+/**
+ * The function is used to convert date/time to a formatted string.
+ *
+ * @param {Date} time
+ * Date/time to be converted.
+ *
+ * @param {string} format
+ * The date format in PHP format.
+ *
+ * @returns {string}
+ * Returns formatted string representation of the date/time.
+ *
+ * @see SimpleCalendar.string_to_time
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.time_to_string = function (time, format) {
     if (!time) return "";
 
     let timestr = format;
     let aux;
 
-    aux = new String(time.getDate());
+    aux = String(time.getDate());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/d/, aux);
 
-    aux = new String(time.getMonth() + 1);
+    aux = String(time.getMonth() + 1);
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/m/, aux);
 
     timestr = timestr.replace(/Y/, time.getFullYear());
 
-    aux = new String(time.getHours());
+    aux = String(time.getHours());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/H/, aux);
 
-    aux = new String(time.getMinutes());
+    aux = String(time.getMinutes());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/i/, aux);
 
-    aux = new String(time.getSeconds());
+    aux = String(time.getSeconds());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/s/, aux);
 
     return timestr;
 };
 
+/**
+ * The function is used to convert a formatted string to date/time.
+ *
+ * @param {string} str
+ * formatted string representation of the date/time.
+ *
+ * @param {string} format
+ * The date format in PHP format.
+ *
+ * @returns {?Date}
+ * Returns resulting date/time or null, if the input string is not a valid date/time.
+ *
+ * @see SimpleCalendar.time_to_string
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.string_to_time = function (str, format) {
     let pattern = format;
 
@@ -83,7 +190,7 @@ SimpleCalendar.string_to_time = function (str, format) {
 
     if (!result) return null;
 
-    let units = new Array();
+    let units = [];
     units[0] = RegExp.$1;
     units[1] = RegExp.$2;
     units[2] = RegExp.$3;
@@ -147,28 +254,23 @@ SimpleCalendar.string_to_time = function (str, format) {
     return dt;
 };
 
-SimpleCalendar.log_positions = function (field) {
-    let field_rect = field.getBoundingClientRect();
-
-    console.log("Position of the field: " + field_rect.top);
-    console.log("Height of the field: " + field_rect.height);
-    console.log("Window Y offset: " + window.pageYOffset);
-    console.log("Window inner height: " + window.innerHeight);
-
-    let calendar_rect = field.my_calendar.getBoundingClientRect();
-
-    console.log("Height of calendar: " + calendar_rect.height);
-    console.log("Top of calendar: " + calendar_rect.top);
-    console.log("Bottom  of calendar: " + calendar_rect.bottom);
-    console.log("Bottom 2 of calendar: " + Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height));
-};
-
+/**
+ * The function is used to position the calendar related to the target input field.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} field
+ * The target input field where the calendar should be positioned.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.position_calendar = function (field) {
     let field_rect = field.getBoundingClientRect();
 
     let calendar_rect = field.my_calendar.getBoundingClientRect();
 
-    if(Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height) > window.innerHeight) {
+    if (Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height) > window.innerHeight) {
         field.my_calendar.style.top = Math.round(field_rect.top - calendar_rect.height - 2 + window.pageYOffset) + 'px';
         field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
     } else {
@@ -177,6 +279,20 @@ SimpleCalendar.position_calendar = function (field) {
     }
 };
 
+/**
+ * The function is used to create the DOM object of the calendar.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} field
+ * The target input field where the calendar should be positioned.
+ *
+ * @param {CalendarConfigDef} config
+ * The calendar config object.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.create_calendar = function (field, config) {
     field.my_calendar = document.createElement('div');
     field.my_calendar.classList.add('calendar_container');
@@ -315,6 +431,9 @@ SimpleCalendar.create_calendar = function (field, config) {
 
     SimpleCalendar.add_event(field, "focus", function () {
         SimpleCalendar.hide_all(this);
+
+        if(field.readOnly || field.disabled) return;
+
         SimpleCalendar.set_date_from_field(this, config);
 
         field.my_calendar.style.display = 'block';
@@ -342,6 +461,20 @@ SimpleCalendar.create_calendar = function (field, config) {
     });
 };
 
+/**
+ * The function is used to set the date on the calendar from the value in the target input field.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} field
+ * The target input field where the calendar should be positioned.
+ *
+ * @param {CalendarConfigDef} config
+ * The calendar config object.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.set_date_from_field = function (field, config) {
     let date = new Date();
     if (field.value) {
@@ -356,6 +489,43 @@ SimpleCalendar.set_date_from_field = function (field, config) {
     SimpleCalendar.set_date(field.my_calendar, date);
 };
 
+/**
+ * The type definition of the calendar configuration, see {@link SimpleCalendar.assign}.
+ *
+ * @typedef CalendarConfigDef
+ *
+ * @type {Object}
+ *
+ * @property {string} format=Y-m-d
+ * The date format of the calendar in PHP format.
+ *
+ * @property {int} start_year=current_year-10
+ * The start year in the year list.
+ *
+ * @property {int} end_year=current_year+10
+ * The end year in the year list.
+ *
+ * @property {Array.<string>} month_names=English_names
+ * The list of the month names. Per default, English names are used.
+ *
+ * @property {Array.<string>} weekday_names=English_names
+ * The list of the weekday names. Per default, English names are used.
+ */
+
+/**
+ * This function should be used to add calendar functionality to an input field.
+ *
+ * @param {HTMLInputElement} field
+ * The target field where the calendar functionality should be added.
+ *
+ * @param {CalendarConfigDef} config
+ * The calendar config object.
+ *
+ * @tutorial 5.using_calendar
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.assign = function (field, config) {
     if (!field) return;
 
@@ -366,6 +536,8 @@ SimpleCalendar.assign = function (field, config) {
     if (!field) return;
 
     if (!(field instanceof HTMLInputElement && field.type == 'text')) return;
+
+    field.autocomplete = "new-password";
 
     if (!config) config = {};
 
@@ -409,12 +581,37 @@ SimpleCalendar.assign = function (field, config) {
     SimpleCalendar.set_date_from_field(field, config);
 };
 
+/**
+ * The function is an auxiliary function that hides the calendar if it is no more active.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} calendar
+ * The calendar DOM object.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.hide_if_inactive = function (calendar) {
     if (calendar.i_am_still_active) return;
 
     calendar.style.display = 'none';
 };
 
+/**
+ * The function is an auxiliary function that sets the date on the calendar.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} calendar
+ * The calendar DOM object.
+ *
+ * @param {Date} date
+ * Date/time to be set.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.set_date = function (calendar, date) {
     calendar.display_date = date;
 
@@ -471,6 +668,17 @@ SimpleCalendar.set_date = function (calendar, date) {
     }
 };
 
+/**
+ * The function is an auxiliary function that hides all active calendars.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} [except]
+ * The input field that should be excluded from hiding.
+ *
+ * @author
+ * Oleg Schildt
+ */
 SimpleCalendar.hide_all = function (except) {
     let elms = document.getElementsByClassName('calendar_container');
     if (elms.length == 0) return;
@@ -486,8 +694,19 @@ SimpleCalendar.hide_all = function (except) {
     }
 };
 
-SimpleCalendar.handle_escape = function (ev) {
-    if (ev.keyCode != 27) return;
+/**
+ * The function is an auxiliary function for handling press of the Esc key and hiding the calendar if necessary.
+ *
+ * @protected
+ *
+ * @param {Event} event
+ * The event object describing the details of the event.
+ *
+ * @author
+ * Oleg Schildt
+ */
+SimpleCalendar.handle_escape = function (event) {
+    if (event.keyCode != 27) return;
 
     SimpleCalendar.hide_all();
 };
@@ -497,4 +716,3 @@ if (navigator.userAgent.toLowerCase().indexOf("msie") != -1) {
 } else {
     SimpleCalendar.add_event(window, 'keydown', SimpleCalendar.handle_escape);
 }
-
