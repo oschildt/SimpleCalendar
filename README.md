@@ -5,7 +5,7 @@
 - very performant
 - easiliy and highly customizable
 
-Demo: http://php-smart-factory.org/calendar/
+Demo: http://php-smart-factory.org/calender/
 
 ## How to use
 
