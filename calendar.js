@@ -130,25 +130,25 @@ SimpleCalendar.time_to_string = function (time, format) {
     var timestr = format;
     var aux;
 
-    aux = String(time.getDate());
+    aux = new String(time.getDate());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/d/, aux);
 
-    aux = String(time.getMonth() + 1);
+    aux = new String(time.getMonth() + 1);
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/m/, aux);
 
     timestr = timestr.replace(/Y/, time.getFullYear());
 
-    aux = String(time.getHours());
+    aux = new String(time.getHours());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/H/, aux);
 
-    aux = String(time.getMinutes());
+    aux = new String(time.getMinutes());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/i/, aux);
 
-    aux = String(time.getSeconds());
+    aux = new String(time.getSeconds());
     if (aux.length == 1) aux = "0" + "" + aux;
     timestr = timestr.replace(/s/, aux);
 
@@ -190,7 +190,7 @@ SimpleCalendar.string_to_time = function (str, format) {
 
     if (!result) return null;
 
-    var units = [];
+    var units = new Array();
     units[0] = RegExp.$1;
     units[1] = RegExp.$2;
     units[2] = RegExp.$3;
@@ -254,6 +254,22 @@ SimpleCalendar.string_to_time = function (str, format) {
     return dt;
 };
 
+SimpleCalendar.log_positions = function (field) {
+    var field_rect = field.getBoundingClientRect();
+
+    console.log("Position of the field: " + field_rect.top);
+    console.log("Height of the field: " + field_rect.height);
+    console.log("Window Y offset: " + window.pageYOffset);
+    console.log("Window inner height: " + window.innerHeight);
+
+    var calendar_rect = field.my_calendar.getBoundingClientRect();
+
+    console.log("Height of calendar: " + calendar_rect.height);
+    console.log("Top of calendar: " + calendar_rect.top);
+    console.log("Bottom  of calendar: " + calendar_rect.bottom);
+    console.log("Bottom 2 of calendar: " + Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height));
+};
+
 /**
  * The function is used to position the calendar related to the target input field.
  *
@@ -270,12 +286,19 @@ SimpleCalendar.position_calendar = function (field) {
 
     var calendar_rect = field.my_calendar.getBoundingClientRect();
 
+    if (field_rect.left + 2 + calendar_rect.width > window.innerWidth)
+    {
+        field.my_calendar.style.left = Math.round(field_rect.left + field_rect.width - calendar_rect.width) + 'px';
+    }
+    else
+    {
+        field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
+    }
+
     if (Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height) > window.innerHeight) {
         field.my_calendar.style.top = Math.round(field_rect.top - calendar_rect.height - 2 + window.pageYOffset) + 'px';
-        field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
     } else {
         field.my_calendar.style.top = Math.round(field_rect.top + field_rect.height + 2 + window.pageYOffset) + 'px';
-        field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
     }
 };
 
