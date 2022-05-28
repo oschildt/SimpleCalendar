@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="height:100%">
 <head>
 <title>Calendar</title>
 
@@ -18,34 +18,58 @@ var config = {
 };
 
 window.onload = function () {
-  SimpleCalendar.init_field("begin_date", config);
-  SimpleCalendar.init_field("end_date", config);
+  SimpleCalendar.assign("begin_date", config);
+  SimpleCalendar.assign("end_date", config);
+
+  SimpleCalendar.assign("date11", config);
+  SimpleCalendar.assign("date12", config);
+  SimpleCalendar.assign("date21", config);
+  SimpleCalendar.assign("date22", config);
 }
 
 </script>
 
 </head>
 
-<body class="">
-<h2>Calendar</h2>
+<body style="height:100%;padding:0;margin:0;position: relative">
+<table style="width:100%;height:100%">
+<tr>
+<td style="vertical-align: top;text-align:left">
+<input type="text" name="date11" id="date11"> left top
+</td>
+<td style="text-align: center">
 
-<table border="1">
-<tr>
-  <td>First name:</td>
-  <td><input type="text" name="first_name" id="first_name"></td>
-  <td></td>
+  <h2>Calendar</h2>
+  
+  <table style="margin:0 auto">
+  <tr>
+    <td>Date range:</td>
+    <td><input type="text" name="begin_date" id="begin_date" value="30.12.1998"></td>
+    <td><input type="text" name="end_date" id="end_date"></td>
+  </tr>
+  </table>
+
+
+</td>
+<td style="vertical-align: top;text-align:right">
+right top <input type="text" name="date12" id="date12"> 
+</td>
 </tr>
 <tr>
-  <td>Last name:</td>
-  <td><input type="text" name="last_name" id="last_name"></td>
-  <td></td>
-</tr>
-<tr>
-  <td>Birth date:</td>
-  <td><input type="text" name="begin_date" id="begin_date" value="30.12.1998"></td>
-  <td><input type="text" name="end_date" id="end_date"></td>
+<td style="vertical-align: bottom;text-align:left">
+<input type="text" name="date21" id="date21"> left bottom 
+</td>
+<td>
+
+</td>
+<td style="vertical-align: bottom;text-align:right">
+right bottom <input type="text" name="date22" id="date22">
+
+</td>
 </tr>
 </table>
+
+
 
 </body>
 </html>

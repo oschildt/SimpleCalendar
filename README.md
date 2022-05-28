@@ -5,7 +5,11 @@
 - very performant
 - easiliy and highly customizable
 
-Demo: http://php-smart-factory.org/calender/
+## Demo
+
+http://php-smart-factory.org/calender/
+
+Also, the local files index.html and mobile.html can bу used for testing.
 
 ## How to use
 

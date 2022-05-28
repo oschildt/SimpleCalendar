@@ -286,19 +286,26 @@ SimpleCalendar.position_calendar = function (field) {
 
     var calendar_rect = field.my_calendar.getBoundingClientRect();
 
-    if (field_rect.left + 2 + calendar_rect.width > window.innerWidth)
+    if (field_rect.left + 2 + calendar_rect.width < window.innerWidth)
     {
+        // calendar may be placed starting from the left side of the field
+        field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
+    }
+    else if (field_rect.right + 2 - calendar_rect.width > 0)
+    {
+        // calendar may be placed starting from the right side of the field
         field.my_calendar.style.left = Math.round(field_rect.left + field_rect.width - calendar_rect.width) + 'px';
     }
     else
     {
-        field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
+        // calendar should be centered
+        field.my_calendar.style.left = Math.round((window.innerWidth - calendar_rect.width)/2.0) + 'px';
     }
 
     if (Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height) > window.innerHeight) {
-        field.my_calendar.style.top = Math.round(field_rect.top - calendar_rect.height - 2 + window.pageYOffset) + 'px';
+        field.my_calendar.style.top = Math.round(field_rect.top - calendar_rect.height - 4 + window.pageYOffset) + 'px';
     } else {
-        field.my_calendar.style.top = Math.round(field_rect.top + field_rect.height + 2 + window.pageYOffset) + 'px';
+        field.my_calendar.style.top = Math.round(field_rect.top + field_rect.height + 4 + window.pageYOffset) + 'px';
     }
 };
 
@@ -562,7 +569,7 @@ SimpleCalendar.assign = function (field, config) {
 
     if (!(field instanceof HTMLInputElement && field.type == 'text')) return;
 
-    field.autocomplete = "new-password";
+    field.autocomplete = "off";
 
     if (!config) config = {};
 
