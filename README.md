@@ -7,7 +7,7 @@
 
 ## Demo
 
-http://php-smart-factory.org/calender/
+http://php-smart-factory.org/calendar/
 
 Also, the local files index.html and mobile.html can bу used for testing.
 
