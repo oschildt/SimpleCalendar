@@ -271,6 +271,48 @@ SimpleCalendar.log_positions = function (field) {
 };
 
 /**
+ * The function lookups a parent width overflow scroll or hidden to check whether the calendar
+ * should be placed above the field instead of below or alligned to the right of the field.
+ *
+ * @protected
+ *
+ * @param {HTMLElement} elm
+ * The child element to start search.
+ *
+ * @returns {HTMLElement}
+ * Returns the first found scrollable parent or BODY if none found.
+ *
+ * @author
+ * Oleg Schildt
+ */
+SimpleCalendar.lookup_scrollable_parent = function(elm)
+{
+  var p_rect, table_rect, cs, level = 1;
+  
+  var current_parent = elm.parentNode;
+  while(current_parent instanceof Element)
+  {
+    cs = window.getComputedStyle(current_parent);
+    
+    //console.log(level + ": " + current_parent.tagName + ", clientHeight: " + current_parent.clientHeight + ", scrollHeight: " + current_parent.scrollHeight + ", overflowY: " + cs.overflowY + ", overflowX: " + cs.overflowX);
+    
+    if(cs.overflowY == "auto" || cs.overflowY == "hidden") {
+       return current_parent;
+    }
+    
+    if(current_parent.tagName == "BODY") {
+       return current_parent;
+    }
+    
+    current_parent = current_parent.parentNode;
+    
+    level++;
+  }
+  
+  return null;
+};
+
+/**
  * The function is used to position the calendar related to the target input field.
  *
  * @protected
@@ -283,30 +325,38 @@ SimpleCalendar.log_positions = function (field) {
  */
 SimpleCalendar.position_calendar = function (field) {
     var field_rect = field.getBoundingClientRect();
-
     var calendar_rect = field.my_calendar.getBoundingClientRect();
+    var table_rect = field.my_calendar.calendar_table.getBoundingClientRect();
+    
+    console.log("Field x: " + field_rect.left + ", calender x: " + calendar_rect.left + ", table_rect x: " + table_rect.left);
 
-    if (field_rect.left + 2 + calendar_rect.width < window.innerWidth)
-    {
-        // calendar may be placed starting from the left side of the field
-        field.my_calendar.style.left = Math.round(field_rect.left) + 'px';
-    }
-    else if (field_rect.right + 2 - calendar_rect.width > 0)
-    {
-        // calendar may be placed starting from the right side of the field
-        field.my_calendar.style.left = Math.round(field_rect.left + field_rect.width - calendar_rect.width) + 'px';
-    }
-    else
-    {
-        // calendar should be centered
-        field.my_calendar.style.left = Math.round((window.innerWidth - calendar_rect.width)/2.0) + 'px';
+    var x = Math.round(field_rect.left - calendar_rect.left);
+    var y = Math.round(field_rect.top - calendar_rect.top) + field_rect.height + 2;
+    
+    var scrollable_parent = SimpleCalendar.lookup_scrollable_parent(field.my_calendar);
+    if(scrollable_parent) {
+        var p_rect = scrollable_parent.getBoundingClientRect();
+        
+        //console.log("Top parent: " + (p_rect.top + scrollable_parent.clientHeight));
+        //console.log("Top calender: " + (calendar_rect.top + y + table_rect.height));
+        
+        if((calendar_rect.top + y + table_rect.height) > (p_rect.top + scrollable_parent.clientHeight)) {
+            y -= (field_rect.height + table_rect.height + 6);
+        }
+
+        console.log("Orig x: " + x);
+        console.log("Left parent: " + (p_rect.left + scrollable_parent.clientWidth));
+        console.log("Left calender: " + (calendar_rect.left + x + table_rect.width));
+
+        if((calendar_rect.left + x + table_rect.width) > (p_rect.left + scrollable_parent.clientWidth)) {
+            x += (field_rect.width - table_rect.width);
+        }
+
+        console.log("Corrected x: " + x);
     }
 
-    if (Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height) > window.innerHeight) {
-        field.my_calendar.style.top = Math.round(field_rect.top - calendar_rect.height - 4 + window.pageYOffset) + 'px';
-    } else {
-        field.my_calendar.style.top = Math.round(field_rect.top + field_rect.height + 4 + window.pageYOffset) + 'px';
-    }
+    field.my_calendar.calendar_table.style.left = x + "px";
+    field.my_calendar.calendar_table.style.top = y + "px";
 };
 
 /**
@@ -328,24 +378,29 @@ SimpleCalendar.create_calendar = function (field, config) {
     field.my_calendar.classList.add('calendar_container');
 
     // make them friends
+    field.my_calendar.config = config;
     field.my_calendar.my_field = field;
 
-    var calendar_table = document.createElement('table');
+    field.my_calendar.calendar_table = document.createElement('table');
     var table_body = document.createElement("tbody");
-    calendar_table.appendChild(table_body);
+    field.my_calendar.calendar_table.appendChild(table_body);
 
-    var elm, option, tr, td;
+    var elm, option, tr, td, tmp;
 
     tr = document.createElement('tr');
     table_body.appendChild(tr);
 
-    td = document.createElement('td');
-    td.classList.add('calendar_head');
-    td.colSpan = 7;
-    tr.appendChild(td);
+    tmp = document.createElement('td');
+    tmp.classList.add('calendar_head');
+    tmp.colSpan = 7;
+    tr.appendChild(tmp);
+    
+    td = document.createElement('div');
+    td.classList.add('calendar_head_area');
+    tmp.appendChild(td);
 
     elm = document.createElement('button');
-    elm.type = 'button';
+    elm.type = "button";
     elm.classList.add('arrow_left');
     elm.innerHTML = '&#10148;';
     SimpleCalendar.add_event(elm, "focus", function () {
@@ -407,7 +462,7 @@ SimpleCalendar.create_calendar = function (field, config) {
     td.appendChild(elm);
 
     elm = document.createElement('button');
-    elm.type = 'button';
+    elm.type = "button";
     elm.classList.add('arrow_right');
     elm.innerHTML = '&#10148;';
     SimpleCalendar.add_event(elm, "focus", function () {
@@ -459,7 +514,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         }
     }
 
-    field.my_calendar.appendChild(calendar_table);
+    field.my_calendar.appendChild(field.my_calendar.calendar_table);
 
     SimpleCalendar.add_event(field, "focus", function () {
         SimpleCalendar.hide_all(this);
@@ -486,7 +541,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         SimpleCalendar.set_date_from_field(this, config);
     });
 
-    document.body.appendChild(field.my_calendar);
+    field.parentNode.append(field.my_calendar);
 
     SimpleCalendar.add_event(window, "resize", function () {
         SimpleCalendar.position_calendar(field);
@@ -536,6 +591,11 @@ SimpleCalendar.set_date_from_field = function (field, config) {
  *
  * @property {int} end_year=current_year+10
  * The end year in the year list.
+ *
+ * @property {Array.<Date>} holidays
+ * The list of the holidays. They are marked specially. 
+ * The holidays should be specified as Date objects. If a holiday repeats every year, 
+ * set its year to 1970.
  *
  * @property {Array.<string>} month_names=English_names
  * The list of the month names. Per default, English names are used.
@@ -614,6 +674,41 @@ SimpleCalendar.assign = function (field, config) {
 };
 
 /**
+ * The function is an auxiliary function that checks whether the date is a holiday due to the config settings.
+ *
+ * @protected
+ *
+ * @param {Date} date
+ * The date to check.
+ *
+ * @param {HTMLElement} calendar
+ * The calendar DOM object.
+ *
+ * @returns {boolean}
+ * Returns True if the date is a holiday, otherwise False.
+ *
+ * @author
+ * Oleg Schildt
+ */
+SimpleCalendar.is_holiday = function (date, calendar) {
+    if (!calendar.config.holidays) return false;
+    
+    var idx = -1;
+    calendar.config.holidays.forEach(function(item, index){
+        var local = new Date(item);
+        
+        if(local.getFullYear() == 1970) {
+            local.setFullYear(date.getFullYear());
+        }
+        
+        if(date.getTime() == local.getTime())
+            idx = index;
+    });
+    
+    return idx != -1; 
+};
+
+/**
  * The function is an auxiliary function that hides the calendar if it is no more active.
  *
  * @protected
@@ -672,15 +767,18 @@ SimpleCalendar.set_date = function (calendar, date) {
 
     var other_month_date = new Date(first_day_date.getTime() - 1 * 24 * 3600 * 1000);
 
-    var current_date = new Date(other_month_date.getFullYear(), other_month_date.getMonth(), other_month_date.getDate() - first_day_of_week + 2);
+    var current_date = new Date(other_month_date.getFullYear(), other_month_date.getMonth(), other_month_date.getDate() - first_day_of_week + 2, 0, 0, 0);
 
     for (var i = 0; i < elms.length; i++) {
+        elms[i].classList.remove('holiday');
         elms[i].classList.remove('other_month');
         elms[i].classList.remove('today');
         elms[i].classList.remove('selected_date');
 
         elms[i].innerHTML = current_date.getDate();
         elms[i].my_date = current_date;
+
+        if (SimpleCalendar.is_holiday(current_date, calendar)) elms[i].classList.add('holiday');
 
         if (current_date.getMonth() != date.getMonth() ||
             current_date.getFullYear() != date.getFullYear()) elms[i].classList.add('other_month');

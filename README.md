@@ -53,6 +53,8 @@ var config = {
   start_year: 1970,
   end_year: 2030,
   
+  holidays: [new Date(1970, 6, 4), new Date(1970, 10, 24)],
+  
   month_names: [
     "January",
     "February",
@@ -91,6 +93,12 @@ The start year of the year dropdown. If not set, the (current_year - 10) is used
 **end_year**
 
 The end year of the year dropdown. If not set, the (current_year + 10) is used.
+
+**holidays**
+
+The list of the holidays. They are marked specially. 
+The holidays should be specified as Date objects. If a holiday repeats every year, 
+set its year to 1970.
 
 **month_names**
 
