@@ -18,6 +18,8 @@ var config = {
 };
 
 window.onload = function () {
+  SimpleCalendar.observe_escape();
+
   SimpleCalendar.assign("begin_date", config);
   SimpleCalendar.assign("end_date", config);
 

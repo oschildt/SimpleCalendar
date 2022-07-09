@@ -19,6 +19,9 @@
 
 var SimpleCalendar = {};
 
+SimpleCalendar.setHideShowHandler = function (handler) {
+    SimpleCalendar.handler = handler;
+};
 
 /**
  * The function is used to add an event listener to a DOM object.
@@ -285,31 +288,29 @@ SimpleCalendar.log_positions = function (field) {
  * @author
  * Oleg Schildt
  */
-SimpleCalendar.lookup_scrollable_parent = function(elm)
-{
-  var p_rect, table_rect, cs, level = 1;
-  
-  var current_parent = elm.parentNode;
-  while(current_parent instanceof Element)
-  {
-    cs = window.getComputedStyle(current_parent);
-    
-    //console.log(level + ": " + current_parent.tagName + ", clientHeight: " + current_parent.clientHeight + ", scrollHeight: " + current_parent.scrollHeight + ", overflowY: " + cs.overflowY + ", overflowX: " + cs.overflowX);
-    
-    if(cs.overflowY == "auto" || cs.overflowY == "hidden") {
-       return current_parent;
+SimpleCalendar.lookup_scrollable_parent = function (elm) {
+    var p_rect, table_rect, cs, level = 1;
+
+    var current_parent = elm.parentNode;
+    while (current_parent instanceof Element) {
+        cs = window.getComputedStyle(current_parent);
+
+        //console.log(level + ": " + current_parent.tagName + ", clientHeight: " + current_parent.clientHeight + ", scrollHeight: " + current_parent.scrollHeight + ", overflowY: " + cs.overflowY + ", overflowX: " + cs.overflowX);
+
+        if (cs.overflowY == "auto" || cs.overflowY == "hidden") {
+            return current_parent;
+        }
+
+        if (current_parent.tagName == "BODY") {
+            return current_parent;
+        }
+
+        current_parent = current_parent.parentNode;
+
+        level++;
     }
-    
-    if(current_parent.tagName == "BODY") {
-       return current_parent;
-    }
-    
-    current_parent = current_parent.parentNode;
-    
-    level++;
-  }
-  
-  return null;
+
+    return null;
 };
 
 /**
@@ -327,20 +328,20 @@ SimpleCalendar.position_calendar = function (field) {
     var field_rect = field.getBoundingClientRect();
     var calendar_rect = field.my_calendar.getBoundingClientRect();
     var table_rect = field.my_calendar.calendar_table.getBoundingClientRect();
-    
+
     console.log("Field x: " + field_rect.left + ", calender x: " + calendar_rect.left + ", table_rect x: " + table_rect.left);
 
     var x = Math.round(field_rect.left - calendar_rect.left);
     var y = Math.round(field_rect.top - calendar_rect.top) + field_rect.height + 2;
-    
+
     var scrollable_parent = SimpleCalendar.lookup_scrollable_parent(field.my_calendar);
-    if(scrollable_parent) {
+    if (scrollable_parent) {
         var p_rect = scrollable_parent.getBoundingClientRect();
-        
+
         //console.log("Top parent: " + (p_rect.top + scrollable_parent.clientHeight));
         //console.log("Top calender: " + (calendar_rect.top + y + table_rect.height));
-        
-        if((calendar_rect.top + y + table_rect.height) > (p_rect.top + scrollable_parent.clientHeight)) {
+
+        if ((calendar_rect.top + y + table_rect.height) > (p_rect.top + scrollable_parent.clientHeight)) {
             y -= (field_rect.height + table_rect.height + 6);
         }
 
@@ -348,7 +349,7 @@ SimpleCalendar.position_calendar = function (field) {
         console.log("Left parent: " + (p_rect.left + scrollable_parent.clientWidth));
         console.log("Left calender: " + (calendar_rect.left + x + table_rect.width));
 
-        if((calendar_rect.left + x + table_rect.width) > (p_rect.left + scrollable_parent.clientWidth)) {
+        if ((calendar_rect.left + x + table_rect.width) > (p_rect.left + scrollable_parent.clientWidth)) {
             x += (field_rect.width - table_rect.width);
         }
 
@@ -394,7 +395,7 @@ SimpleCalendar.create_calendar = function (field, config) {
     tmp.classList.add('calendar_head');
     tmp.colSpan = 7;
     tr.appendChild(tmp);
-    
+
     td = document.createElement('div');
     td.classList.add('calendar_head_area');
     tmp.appendChild(td);
@@ -519,12 +520,14 @@ SimpleCalendar.create_calendar = function (field, config) {
     SimpleCalendar.add_event(field, "focus", function () {
         SimpleCalendar.hide_all(this);
 
-        if(field.readOnly || field.disabled) return;
+        if (field.readOnly || field.disabled) return;
 
         SimpleCalendar.set_date_from_field(this, config);
 
         field.my_calendar.style.display = 'block';
         SimpleCalendar.position_calendar(field);
+
+        if (SimpleCalendar.handler) SimpleCalendar.handler();
 
         this.my_calendar.i_am_still_active = true;
     });
@@ -593,8 +596,8 @@ SimpleCalendar.set_date_from_field = function (field, config) {
  * The end year in the year list.
  *
  * @property {Array.<Date>} holidays
- * The list of the holidays. They are marked specially. 
- * The holidays should be specified as Date objects. If a holiday repeats every year, 
+ * The list of the holidays. They are marked specially.
+ * The holidays should be specified as Date objects. If a holiday repeats every year,
  * set its year to 1970.
  *
  * @property {Array.<string>} month_names=English_names
@@ -692,20 +695,20 @@ SimpleCalendar.assign = function (field, config) {
  */
 SimpleCalendar.is_holiday = function (date, calendar) {
     if (!calendar.config.holidays) return false;
-    
+
     var idx = -1;
-    calendar.config.holidays.forEach(function(item, index){
+    calendar.config.holidays.forEach(function (item, index) {
         var local = new Date(item);
-        
-        if(local.getFullYear() == 1970) {
+
+        if (local.getFullYear() == 1970) {
             local.setFullYear(date.getFullYear());
         }
-        
-        if(date.getTime() == local.getTime())
+
+        if (date.getTime() == local.getTime())
             idx = index;
     });
-    
-    return idx != -1; 
+
+    return idx != -1;
 };
 
 /**
@@ -723,6 +726,8 @@ SimpleCalendar.hide_if_inactive = function (calendar) {
     if (calendar.i_am_still_active) return;
 
     calendar.style.display = 'none';
+
+    if (SimpleCalendar.handler) SimpleCalendar.handler();
 };
 
 /**
@@ -811,7 +816,11 @@ SimpleCalendar.set_date = function (calendar, date) {
  */
 SimpleCalendar.hide_all = function (except) {
     var elms = document.getElementsByClassName('calendar_container');
-    if (elms.length == 0) return;
+    if (elms.length == 0)   {
+        if (SimpleCalendar.handler) SimpleCalendar.handler();
+
+        return;
+    }
 
     for (var i = 0; i < elms.length; i++) {
         if (elms[i].my_field == except) continue;
@@ -822,6 +831,8 @@ SimpleCalendar.hide_all = function (except) {
         elms[i].style.display = 'none';
         elms[i].i_am_still_active = false;
     }
+
+    if (SimpleCalendar.handler) SimpleCalendar.handler();
 };
 
 /**
@@ -832,6 +843,8 @@ SimpleCalendar.hide_all = function (except) {
  * @param {Event} event
  * The event object describing the details of the event.
  *
+ * @see SimpleCalendar.observe_escape
+ *
  * @author
  * Oleg Schildt
  */
@@ -841,9 +854,22 @@ SimpleCalendar.handle_escape = function (event) {
     SimpleCalendar.hide_all();
 };
 
-if (navigator.userAgent.toLowerCase().indexOf("msie") != -1) {
-    SimpleCalendar.add_event(document.body, 'keydown', SimpleCalendar.handle_escape);
-} else {
-    SimpleCalendar.add_event(window, 'keydown', SimpleCalendar.handle_escape);
-}
+/**
+ * The function activates observing the Esc press.
+ *
+ * @protected
+ *
+ * @see SimpleCalendar.handle_escape
+ *
+ * @author
+ * Oleg Schildt
+ */
+SimpleCalendar.observe_escape = function () {
+    if (navigator.userAgent.toLowerCase().indexOf("msie") != -1) {
+        SimpleCalendar.add_event(document.body, 'keydown', SimpleCalendar.handle_escape);
+    } else {
+        SimpleCalendar.add_event(window, 'keydown', SimpleCalendar.handle_escape);
+    }
+};
+
 
