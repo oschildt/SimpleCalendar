@@ -257,22 +257,6 @@ SimpleCalendar.string_to_time = function (str, format) {
     return dt;
 };
 
-SimpleCalendar.log_positions = function (field) {
-    var field_rect = field.getBoundingClientRect();
-
-    console.log("Position of the field: " + field_rect.top);
-    console.log("Height of the field: " + field_rect.height);
-    console.log("Window Y offset: " + window.pageYOffset);
-    console.log("Window inner height: " + window.innerHeight);
-
-    var calendar_rect = field.my_calendar.getBoundingClientRect();
-
-    console.log("Height of calendar: " + calendar_rect.height);
-    console.log("Top of calendar: " + calendar_rect.top);
-    console.log("Bottom  of calendar: " + calendar_rect.bottom);
-    console.log("Bottom 2 of calendar: " + Math.round(field_rect.top + field_rect.height + 2 + calendar_rect.height));
-};
-
 /**
  * The function lookups a parent width overflow scroll or hidden to check whether the calendar
  * should be placed above the field instead of below or alligned to the right of the field.
@@ -289,13 +273,11 @@ SimpleCalendar.log_positions = function (field) {
  * Oleg Schildt
  */
 SimpleCalendar.lookup_scrollable_parent = function (elm) {
-    var p_rect, table_rect, cs, level = 1;
+    var cs, level = 1;
 
     var current_parent = elm.parentNode;
     while (current_parent instanceof Element) {
         cs = window.getComputedStyle(current_parent);
-
-        //console.log(level + ": " + current_parent.tagName + ", clientHeight: " + current_parent.clientHeight + ", scrollHeight: " + current_parent.scrollHeight + ", overflowY: " + cs.overflowY + ", overflowX: " + cs.overflowX);
 
         if (cs.overflowY == "auto" || cs.overflowY == "hidden") {
             return current_parent;
@@ -329,8 +311,6 @@ SimpleCalendar.position_calendar = function (field) {
     var calendar_rect = field.my_calendar.getBoundingClientRect();
     var table_rect = field.my_calendar.calendar_table.getBoundingClientRect();
 
-    console.log("Field x: " + field_rect.left + ", calender x: " + calendar_rect.left + ", table_rect x: " + table_rect.left);
-
     var x = Math.round(field_rect.left - calendar_rect.left);
     var y = Math.round(field_rect.top - calendar_rect.top) + field_rect.height + 2;
 
@@ -338,22 +318,13 @@ SimpleCalendar.position_calendar = function (field) {
     if (scrollable_parent) {
         var p_rect = scrollable_parent.getBoundingClientRect();
 
-        //console.log("Top parent: " + (p_rect.top + scrollable_parent.clientHeight));
-        //console.log("Top calender: " + (calendar_rect.top + y + table_rect.height));
-
         if ((calendar_rect.top + y + table_rect.height) > (p_rect.top + scrollable_parent.clientHeight)) {
             y -= (field_rect.height + table_rect.height + 6);
         }
 
-        console.log("Orig x: " + x);
-        console.log("Left parent: " + (p_rect.left + scrollable_parent.clientWidth));
-        console.log("Left calender: " + (calendar_rect.left + x + table_rect.width));
-
         if ((calendar_rect.left + x + table_rect.width) > (p_rect.left + scrollable_parent.clientWidth)) {
             x += (field_rect.width - table_rect.width);
         }
-
-        console.log("Corrected x: " + x);
     }
 
     field.my_calendar.calendar_table.style.left = x + "px";
