@@ -836,11 +836,7 @@ SimpleCalendar.handle_escape = function (event) {
  * Oleg Schildt
  */
 SimpleCalendar.observe_escape = function () {
-    if (navigator.userAgent.toLowerCase().indexOf("msie") != -1) {
-        SimpleCalendar.add_event(document.body, 'keydown', SimpleCalendar.handle_escape);
-    } else {
-        SimpleCalendar.add_event(window, 'keydown', SimpleCalendar.handle_escape);
-    }
+    SimpleCalendar.add_event(window, 'keydown', SimpleCalendar.handle_escape);
 };
 
 
