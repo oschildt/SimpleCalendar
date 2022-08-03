@@ -355,21 +355,21 @@ SimpleCalendar.create_calendar = function (field, config) {
 
     field.my_calendar.calendar_table = document.createElement('table');
     var table_body = document.createElement("tbody");
-    field.my_calendar.calendar_table.appendChild(table_body);
+    field.my_calendar.calendar_table.append(table_body);
 
     var elm, option, tr, td, tmp;
 
     tr = document.createElement('tr');
-    table_body.appendChild(tr);
+    table_body.append(tr);
 
     tmp = document.createElement('td');
     tmp.classList.add('calendar_head');
     tmp.colSpan = 7;
-    tr.appendChild(tmp);
+    tr.append(tmp);
 
     td = document.createElement('div');
     td.classList.add('calendar_head_area');
-    tmp.appendChild(td);
+    tmp.append(td);
 
     elm = document.createElement('button');
     elm.type = "button";
@@ -389,7 +389,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         var month = field.my_calendar.display_date.getMonth();
         SimpleCalendar.set_date(field.my_calendar, new Date(year, month, 0));
     });
-    td.appendChild(elm);
+    td.append(elm);
 
     elm = document.createElement('select');
     elm.classList.add('month_selector');
@@ -410,7 +410,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         var year = field.my_calendar.display_date.getFullYear();
         SimpleCalendar.set_date(field.my_calendar, new Date(year, Number.parseInt(this.value) + 1, 0));
     });
-    td.appendChild(elm);
+    td.append(elm);
 
     elm = document.createElement('select');
     elm.classList.add('year_selector');
@@ -431,7 +431,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         var month = field.my_calendar.display_date.getMonth();
         SimpleCalendar.set_date(field.my_calendar, new Date(Number.parseInt(this.value), month + 1, 0));
     });
-    td.appendChild(elm);
+    td.append(elm);
 
     elm = document.createElement('button');
     elm.type = "button";
@@ -451,7 +451,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         var month = field.my_calendar.display_date.getMonth();
         SimpleCalendar.set_date(field.my_calendar, new Date(year, month + 2, 0));
     });
-    td.appendChild(elm);
+    td.append(elm);
 
     tr = document.createElement('tr');
     for (var j = 0; j < 7; j++) {
@@ -459,19 +459,19 @@ SimpleCalendar.create_calendar = function (field, config) {
         td.classList.add('weekday');
         if (j > 4) td.classList.add('weekend');
         td.innerHTML = config.weekday_names[j];
-        tr.appendChild(td);
+        tr.append(td);
     }
-    table_body.appendChild(tr);
+    table_body.append(tr);
 
     for (var i = 0; i < 6; i++) {
         tr = document.createElement('tr');
-        table_body.appendChild(tr);
+        table_body.append(tr);
 
         for (var j = 0; j < 7; j++) {
             td = document.createElement('td');
             td.classList.add('day');
             if (j > 4) td.classList.add('weekend');
-            tr.appendChild(td);
+            tr.append(td);
 
             SimpleCalendar.add_event(td, 'click', function () {
                 // IMPORTANT! The value must be set before changing the calendar month
@@ -486,7 +486,7 @@ SimpleCalendar.create_calendar = function (field, config) {
         }
     }
 
-    field.my_calendar.appendChild(field.my_calendar.calendar_table);
+    field.my_calendar.append(field.my_calendar.calendar_table);
 
     SimpleCalendar.add_event(field, "focus", function () {
         SimpleCalendar.hide_all(this);
