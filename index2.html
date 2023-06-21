@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%">
+<head>
+<title>Calendar</title>
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+
+<link rel="stylesheet" href="calendar.css?d=3671556" type="text/css"/>
+
+<script type='text/JavaScript' src='calendar.js'></script>
+
+<script type='text/JavaScript'>
+
+var config = {
+  format: 'd.m.Y',
+  holidays: [new Date(2022, 6, 4), new Date(1970, 6, 6), new Date(1970, 6, 10), new Date(1970, 7, 4)],
+  start_year: 1970,
+  end_year: 2030
+};
+
+window.onload = function () {
+  SimpleCalendar.observe_escape();
+
+  SimpleCalendar.assign(".date_picker", config);
+}
+
+</script>
+
+<style>
+textarea:focus, input:focus{
+    outline: none;
+}
+</style>
+
+</head>
+
+<body style="height:100%;padding:0;margin:60px 0px 0px 0px;position:relative">
+
+  <div style="margin: 0 auto; width:400px; border: 1px solid green; position: fixed; top: 0"><input class="date_picker" type="text" name="fix_date" id="fix_date"></div>
+
+<div style="border: 1px solid red; overflow: auto; height: 620px;margin:0px 40px 0px 40px">
+
+  <div style="margin: 0 auto; width:400px; border: 1px solid green; position: sticky; top: 0"><input class="date_picker" type="text" name="fix_date2" id="fix_date2"></div>
+
+<table style="width:100%;height:600px" border=1>
+<tr>
+<td style="vertical-align: top;text-align:left">
+<input class="date_picker" type="text" name="date11" id="date11"> left top
+</td>
+<td style="text-align: center">
+
+  
+  
+  <h2>Calendar</h2>
+  
+  <table style="margin:0 auto">
+  <tr>
+    <td>Date range:</td>
+    <td><input class="date_picker" type="text" name="begin_date" id="begin_date" value="30.12.1998"></td>
+    <td><input class="date_picker" type="text" name="end_date" id="end_date"></td>
+  </tr>
+  </table>
+
+
+</td>
+<td style="vertical-align: top;text-align:right">
+right top <input class="date_picker" type="text" name="date12" id="date12"> 
+</td>
+</tr>
+<tr>
+<td style="vertical-align: bottom;text-align:left">
+<input class="date_picker" type="text" name="date21" id="date21"> left bottom 
+</td>
+<td>
+
+</td>
+<td style="vertical-align: bottom;text-align:right">
+right bottom <input class="date_picker" type="text" name="date22" id="date22">
+
+</td>
+</tr>
+</table>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+<div style="position: relative;border: 1px solid blue; height: 400px;">
+
+<input class="date_picker" type="text" name="date33" id="date33" style="position: absolute; top: 20px; right: 35px"> 
+
+    <div style="position: absolute;border: 1px solid orange; width: 250px; height: 100px;top: 220px; right: 40px;">
+     <input class="date_picker" type="text" name="date44" id="date44"> 
+    </div>
+
+</div>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Range 2: <input class="date_picker" type="text" name="begin_date2" id="begin_date2"> - <input class="date_picker" type="text" name="end_date2" id="end_date2"><br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+Line 1<br>
+<input class="date_picker" type="text" name="date99" id="date99">
+</div>
+
+
+</body>
+</html>

@@ -188,18 +188,18 @@ SimpleCalendar.string_to_time = function (str, format) {
     pattern = pattern.replace(/i/, "([0-9]{1,2})");
     pattern = pattern.replace(/s/, "([0-9]{1,2})");
 
-    var re = new RegExp(pattern);
+    var re = new RegExp("^" + pattern + "$");
     var result = re.exec(str);
 
     if (!result) return null;
 
-    var units = new Array();
-    units[0] = RegExp.$1;
-    units[1] = RegExp.$2;
-    units[2] = RegExp.$3;
-    units[3] = RegExp.$4;
-    units[4] = RegExp.$5;
-    units[5] = RegExp.$6;
+    var units = [];
+    units[0] = result[1];
+    units[1] = result[2];
+    units[2] = result[3];
+    units[3] = result[4];
+    units[4] = result[5];
+    units[5] = result[6];
 
     var order = format.replace(/[^YmdHis]/g, "");
 
@@ -506,6 +506,11 @@ SimpleCalendar.create_calendar = function (field, config) {
     SimpleCalendar.add_event(field, "blur", function () {
         var me = this;
         me.my_calendar.i_am_still_active = false;
+
+        if (SimpleCalendar.string_to_time(me.value.trim(), config.format) === null) {
+            me.value = "";
+        }
+
         setTimeout(function () {
             SimpleCalendar.hide_if_inactive(me.my_calendar)
         }, 300);
@@ -538,8 +543,8 @@ SimpleCalendar.create_calendar = function (field, config) {
  */
 SimpleCalendar.set_date_from_field = function (field, config) {
     var date = new Date();
-    if (field.value) {
-        date = SimpleCalendar.string_to_time(field.value, config.format);
+    if (field.value.trim()) {
+        date = SimpleCalendar.string_to_time(field.value.trim(), config.format);
         if (date === null) {
             date = new Date();
         } else {
@@ -559,6 +564,9 @@ SimpleCalendar.set_date_from_field = function (field, config) {
  *
  * @property {string} format=Y-m-d
  * The date format of the calendar in PHP format.
+ *
+ * @property {string} placeholder
+ * The hint for the date format.
  *
  * @property {int} start_year=current_year-10
  * The start year in the year list.
@@ -581,8 +589,8 @@ SimpleCalendar.set_date_from_field = function (field, config) {
 /**
  * This function should be used to add calendar functionality to an input field.
  *
- * @param {HTMLInputElement} field
- * The target field where the calendar functionality should be added.
+ * @param {string|HTMLInputElement} field_ref
+ * The target field where the calendar functionality should be added - an element or selector.
  *
  * @param {CalendarConfigDef} config
  * The calendar config object.
@@ -592,22 +600,14 @@ SimpleCalendar.set_date_from_field = function (field, config) {
  * @author
  * Oleg Schildt
  */
-SimpleCalendar.assign = function (field, config) {
-    if (!field) return;
-
-    if (typeof field == "string" || typeof field == "number") {
-        field = document.getElementById(field);
-    }
-
-    if (!field) return;
-
-    if (!(field instanceof HTMLInputElement && field.type == 'text')) return;
-
-    field.autocomplete = "off";
+SimpleCalendar.assign = function (field_ref, config) {
+    if (!field_ref) return;
 
     if (!config) config = {};
 
     var date = new Date();
+
+    if (config.placeholder) field.placeholder = config.placeholder;
 
     if (!config.format) config.format = "Y-m-d";
     if (!config.start_year) config.start_year = date.getFullYear() - 10;
@@ -641,10 +641,24 @@ SimpleCalendar.assign = function (field, config) {
             "Su"
         );
     }
+    
+    var fields = [];
 
-    SimpleCalendar.create_calendar(field, config);
+    if ((field_ref instanceof HTMLInputElement && field_ref.type == 'text')) {
+        fields.push(field_ref);
+    } else if (typeof field_ref == "string" || typeof field_ref == "number") {
+        fields = document.querySelectorAll(field_ref);
+    } else {
+        return;
+    }
 
-    SimpleCalendar.set_date_from_field(field, config);
+    for (var i = 0; i < fields.length; i++) {
+        fields[i].autocomplete = "off";
+
+        SimpleCalendar.create_calendar(fields[i], config);
+
+        SimpleCalendar.set_date_from_field(fields[i], config);
+    }
 };
 
 /**
@@ -787,7 +801,7 @@ SimpleCalendar.set_date = function (calendar, date) {
  */
 SimpleCalendar.hide_all = function (except) {
     var elms = document.getElementsByClassName('calendar_container');
-    if (elms.length == 0)   {
+    if (elms.length == 0) {
         if (SimpleCalendar.handler) SimpleCalendar.handler();
 
         return;
