@@ -283,7 +283,7 @@ SimpleCalendar.lookup_scrollable_parent = function (elm) {
             return current_parent;
         }
 
-        if (current_parent.tagName == "BODY") {
+        if (current_parent.tagName == "HTML") {
             return current_parent;
         }
 
@@ -607,8 +607,6 @@ SimpleCalendar.assign = function (field_ref, config) {
 
     var date = new Date();
 
-    if (config.placeholder) field.placeholder = config.placeholder;
-
     if (!config.format) config.format = "Y-m-d";
     if (!config.start_year) config.start_year = date.getFullYear() - 10;
     if (!config.end_year) config.end_year = date.getFullYear() + 10;
@@ -654,6 +652,8 @@ SimpleCalendar.assign = function (field_ref, config) {
 
     for (var i = 0; i < fields.length; i++) {
         fields[i].autocomplete = "off";
+
+        if (config.placeholder) fields[i].placeholder = config.placeholder;
 
         SimpleCalendar.create_calendar(fields[i], config);
 
