@@ -20,13 +20,15 @@ var config = {
 window.onload = function () {
   SimpleCalendar.observe_escape();
 
-  SimpleCalendar.assign("begin_date", config);
-  SimpleCalendar.assign("end_date", config);
+  var begin_date = document.getElementById("begin_date");
+  
+  SimpleCalendar.assign(begin_date, config);
+  SimpleCalendar.assign("#end_date", config);
 
-  SimpleCalendar.assign("date11", config);
-  SimpleCalendar.assign("date12", config);
-  SimpleCalendar.assign("date21", config);
-  SimpleCalendar.assign("date22", config);
+  SimpleCalendar.assign("#date11", config);
+  SimpleCalendar.assign("#date12", config);
+  SimpleCalendar.assign("#date21", config);
+  SimpleCalendar.assign("#date22", config);
 }
 
 </script>

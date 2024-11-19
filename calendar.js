@@ -96,12 +96,23 @@ SimpleCalendar.fire_event = function (oEmt, sEvt) {
  * Oleg Schildt
  */
 SimpleCalendar.validate_date = function (day, month, year) {
-    if (isNaN(day) || isNaN(month) || isNaN(year)) return false;
+    if (isNaN(day) || isNaN(month) || isNaN(year)) {
+        return false;
+    }
+    
+    day = parseInt(day);
+    month = parseInt(month);
+    year = parseInt(year);
+    
     if (month < 1 || month > 12) {
         return false;
     }
 
-    var dt = new Date(year, month + 1, 0);
+    // we get the number of days in the month by setting
+    // next month with the day 0.
+    // The month index starts with 0, so, the normal month
+    // value is already the next month
+    var dt = new Date(year, month, 0);
 
     if (day < 1 || day > dt.getDate()) {
         return false;
@@ -188,18 +199,18 @@ SimpleCalendar.string_to_time = function (str, format) {
     pattern = pattern.replace(/i/, "([0-9]{1,2})");
     pattern = pattern.replace(/s/, "([0-9]{1,2})");
 
-    var re = new RegExp(pattern);
+    var re = new RegExp("^" + pattern + "$");
     var result = re.exec(str);
 
     if (!result) return null;
 
-    var units = new Array();
-    units[0] = RegExp.$1;
-    units[1] = RegExp.$2;
-    units[2] = RegExp.$3;
-    units[3] = RegExp.$4;
-    units[4] = RegExp.$5;
-    units[5] = RegExp.$6;
+    var units = [];
+    units[0] = result[1];
+    units[1] = result[2];
+    units[2] = result[3];
+    units[3] = result[4];
+    units[4] = result[5];
+    units[5] = result[6];
 
     var order = format.replace(/[^YmdHis]/g, "");
 
@@ -283,7 +294,7 @@ SimpleCalendar.lookup_scrollable_parent = function (elm) {
             return current_parent;
         }
 
-        if (current_parent.tagName == "BODY") {
+        if (current_parent.tagName == "HTML") {
             return current_parent;
         }
 
@@ -506,6 +517,11 @@ SimpleCalendar.create_calendar = function (field, config) {
     SimpleCalendar.add_event(field, "blur", function () {
         var me = this;
         me.my_calendar.i_am_still_active = false;
+
+        if (SimpleCalendar.string_to_time(me.value.trim(), config.format) === null) {
+            me.value = "";
+        }
+
         setTimeout(function () {
             SimpleCalendar.hide_if_inactive(me.my_calendar)
         }, 300);
@@ -538,8 +554,8 @@ SimpleCalendar.create_calendar = function (field, config) {
  */
 SimpleCalendar.set_date_from_field = function (field, config) {
     var date = new Date();
-    if (field.value) {
-        date = SimpleCalendar.string_to_time(field.value, config.format);
+    if (field.value.trim()) {
+        date = SimpleCalendar.string_to_time(field.value.trim(), config.format);
         if (date === null) {
             date = new Date();
         } else {
@@ -559,6 +575,9 @@ SimpleCalendar.set_date_from_field = function (field, config) {
  *
  * @property {string} format=Y-m-d
  * The date format of the calendar in PHP format.
+ *
+ * @property {string} placeholder
+ * The hint for the date format.
  *
  * @property {int} start_year=current_year-10
  * The start year in the year list.
@@ -581,8 +600,8 @@ SimpleCalendar.set_date_from_field = function (field, config) {
 /**
  * This function should be used to add calendar functionality to an input field.
  *
- * @param {HTMLInputElement} field
- * The target field where the calendar functionality should be added.
+ * @param {string|HTMLInputElement} field_ref
+ * The target field where the calendar functionality should be added - an element or selector.
  *
  * @param {CalendarConfigDef} config
  * The calendar config object.
@@ -592,18 +611,8 @@ SimpleCalendar.set_date_from_field = function (field, config) {
  * @author
  * Oleg Schildt
  */
-SimpleCalendar.assign = function (field, config) {
-    if (!field) return;
-
-    if (typeof field == "string" || typeof field == "number") {
-        field = document.getElementById(field);
-    }
-
-    if (!field) return;
-
-    if (!(field instanceof HTMLInputElement && field.type == 'text')) return;
-
-    field.autocomplete = "off";
+SimpleCalendar.assign = function (field_ref, config) {
+    if (!field_ref) return;
 
     if (!config) config = {};
 
@@ -641,10 +650,26 @@ SimpleCalendar.assign = function (field, config) {
             "Su"
         );
     }
+    
+    var fields = [];
 
-    SimpleCalendar.create_calendar(field, config);
+    if ((field_ref instanceof HTMLInputElement && field_ref.type == 'text')) {
+        fields.push(field_ref);
+    } else if (typeof field_ref == "string" || typeof field_ref == "number") {
+        fields = document.querySelectorAll(field_ref);
+    } else {
+        return;
+    }
 
-    SimpleCalendar.set_date_from_field(field, config);
+    for (var i = 0; i < fields.length; i++) {
+        fields[i].autocomplete = "off";
+
+        if (config.placeholder) fields[i].placeholder = config.placeholder;
+
+        SimpleCalendar.create_calendar(fields[i], config);
+
+        SimpleCalendar.set_date_from_field(fields[i], config);
+    }
 };
 
 /**
@@ -702,6 +727,45 @@ SimpleCalendar.hide_if_inactive = function (calendar) {
 };
 
 /**
+ * The function is an auxiliary function for getting the previous day of a day.
+ *
+ * @param {Date} date
+ * Base date/time.
+ *
+ * @author
+ * Oleg Schildt
+ */
+SimpleCalendar.getPreviousDay = function (date) {
+  var previousDay = new Date(date);
+  
+  if (date.getDate() === 1) {
+    previousDay.setMonth(date.getMonth() - 1);
+    previousDay.setDate(new Date(date.getFullYear(), date.getMonth(), 0).getDate());
+  } else {
+    previousDay.setDate(date.getDate() - 1);
+  }
+  
+  return previousDay;
+};
+
+/**
+ * The function is an auxiliary function for getting the next day of a day.
+ *
+ * @param {Date} date
+ * Base date/time.
+ *
+ * @author
+ * Oleg Schildt
+ */
+SimpleCalendar.getNextDay = function (date) {
+  var nextDay = new Date(date);
+
+  nextDay.setDate(date.getDate() + 1);
+
+  return nextDay;
+};
+
+/**
  * The function is an auxiliary function that sets the date on the calendar.
  *
  * @protected
@@ -741,7 +805,7 @@ SimpleCalendar.set_date = function (calendar, date) {
     var first_day_of_week = first_day_date.getDay();
     if (first_day_of_week == 0) first_day_of_week = 7;
 
-    var other_month_date = new Date(first_day_date.getTime() - 1 * 24 * 3600 * 1000);
+    var other_month_date = SimpleCalendar.getPreviousDay(first_day_date);
 
     var current_date = new Date(other_month_date.getFullYear(), other_month_date.getMonth(), other_month_date.getDate() - first_day_of_week + 2, 0, 0, 0);
 
@@ -770,7 +834,7 @@ SimpleCalendar.set_date = function (calendar, date) {
             current_date.getDate() == calendar.selected_date.getDate()
         ) elms[i].classList.add('selected_date');
 
-        current_date = new Date(current_date.getTime() + 1 * 24 * 3600 * 1000);
+        current_date = SimpleCalendar.getNextDay(current_date);
     }
 };
 
@@ -787,7 +851,7 @@ SimpleCalendar.set_date = function (calendar, date) {
  */
 SimpleCalendar.hide_all = function (except) {
     var elms = document.getElementsByClassName('calendar_container');
-    if (elms.length == 0)   {
+    if (elms.length == 0) {
         if (SimpleCalendar.handler) SimpleCalendar.handler();
 
         return;

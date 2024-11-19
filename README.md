@@ -64,7 +64,7 @@ var config = {
     "June",
     "July",
     "August",
-    "Septemeber",
+    "September",
     "October",
     "November",
     "December"
