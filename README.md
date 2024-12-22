@@ -3,13 +3,13 @@
 - pure JavaScript, no libraries and frameworks required
 - very simple, lightweight and robust
 - very performant
-- easiliy and highly customizable
+- easily and highly customizable
 
 ## Demo
 
 http://php-smart-factory.org/calendar/
 
-Also, the local files index.html and mobile.html can bу used for testing.
+Also, the local files *index.html* and *mobile.html* can bу used for testing.
 
 ## How to use
 
@@ -40,6 +40,8 @@ Init the fields passing the field ID string or the object variable:
 
 ```
 window.onload = function () {
+  SimpleCalendar.observe_escape();
+
   SimpleCalendar.assign("begin_date", config);
   SimpleCalendar.assign("end_date", config);
 }
@@ -96,8 +98,8 @@ The end year of the year dropdown. If not set, the (current_year + 10) is used.
 
 **holidays**
 
-The list of the holidays. They are marked specially. 
-The holidays should be specified as Date objects. If a holiday repeats every year, 
+The list of the holidays. They are marked specially.
+The holidays should be specified as Date objects. If a holiday repeats every year,
 set its year to 1970.
 
 **month_names**
