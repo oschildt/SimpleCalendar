@@ -1,1291 +1,1336 @@
 /**
  * @file
- * The file contains implementation of the simple calendar.
+ * Provides the SimpleCalendar date picker.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 
 /**
- * The namespace for the simple calendar.
+ * The namespace for the simple calendar, exposed to classic scripts.
  *
  * @namespace SimpleCalendar
- *
  * @tutorial 5.using_calendar
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 
 var SimpleCalendar = {};
 
 /**
- * Internal reference to the calendar control.
+ * The shared calendar control, created on first assignment.
  *
- * @type {HTMLElement}
+ * @type {?HTMLDivElement}
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.calendar = null;
 
 /**
- * The function sets a callback function that is called if the calendar is shown or hidden.
+ * Registers a callback for opening and closing the calendar.
  *
- * @param {hide_show_handler_callback} handler
- * The callback function to be called.
+ * @param {?hide_show_handler_callback} handler
+ * The callback, or null to unregister it.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.set_hide_show_handler = function (handler) {
     SimpleCalendar.handler = handler;
-};
+}; // set_hide_show_handler
 
 /**
- * The function is used to add an event listener to a DOM object.
+ * Registers a DOM event listener.
+ *
+ * @protected
+ * @see SimpleCalendar.remove_event
+ *
+ * @param {?EventTarget} target
+ * The target, if present.
+ *
+ * @param {string} type
+ * The event type.
+ *
+ * @param {EventListener} listener
+ * The callback for the event.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.add_event = function (target, type, listener) {
+    target?.addEventListener(type, listener);
+}; // add_event
+
+/**
+ * Removes a DOM event listener registered with add_event.
+ *
+ * @protected
+ * @see SimpleCalendar.add_event
+ *
+ * @param {?EventTarget} target
+ * The target, if present.
+ *
+ * @param {string} type
+ * The event type.
+ *
+ * @param {EventListener} listener
+ * The registered callback.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.remove_event = function (target, type, listener) {
+    target?.removeEventListener(type, listener);
+}; // remove_event
+
+/**
+ * Dispatches a bubbling DOM event.
  *
  * @protected
  *
- * @param {HTMLElement} oEmt
- * DOM node the event should be added.
+ * @param {EventTarget} target
+ * The event target.
  *
- * @param {string} sEvt
- * Name of the event.
+ * @param {string} type
+ * The event type.
  *
- * @param {eventCallback} act
- * Callback function to be called if the event occurs.
- *
- * @see SimpleCalendar.remove_event
- * @see SimpleCalendar.fire_event
- *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
-SimpleCalendar.add_event = function (oEmt, sEvt, act) {
-    if (!oEmt) return;
-    if (oEmt.addEventListener)
-        oEmt.addEventListener(sEvt, act, false);
-    else if (oEmt.attachEvent)
-        oEmt.attachEvent('on' + sEvt, act);
-    else
-        oEmt['on' + sEvt] = act;
-};
+SimpleCalendar.fire_event = function (target, type) {
+    target.dispatchEvent(new Event(type, { bubbles: true }));
+}; // fire_event
 
 /**
- * The function is used to remove an event listener from a DOM object.
+ * Creates a Date from numeric calendar parts, allowing overflow for date arithmetic.
  *
  * @protected
  *
- * @param {HTMLElement} oEmt
- * DOM node the event should be added.
+ * @param {Object} parts
+ * Year Y, one-based month m, day d, and optional H, i, s and ms time parts.
  *
- * @param {string} sEvt
- * Name of the event.
+ * @param {boolean} utc
+ * Whether to store the calendar parts in UTC.
  *
- * @param {eventCallback} act
- * Callback function to be called if the event occurs.
+ * @returns {Date}
+ * The date, or an invalid Date if the result exceeds the Date range.
  *
- * @see SimpleCalendar.add_event
- * @see SimpleCalendar.fire_event
- *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
-SimpleCalendar.remove_event = function(oEmt, sEvt, act)
-{
-	if (!oEmt) return;
-	if (oEmt.removeEventListener)
-		oEmt.removeEventListener (sEvt, act, false);
-	else
-		if (oEmt.detachEvent)
-			oEmt.detachEvent ('on'+sEvt, act);
-		else
-			oEmt['on'+sEvt] = null;
-};
+SimpleCalendar.create_date = function ({ Y, m, d, H = 0, i = 0, s = 0, ms = 0 }, utc) {
+    const date = new Date(0);
+
+    // setFullYear and setUTCFullYear preserve years 0 through 99.
+    if (utc) {
+        date.setUTCFullYear(Y, m - 1, d);
+        date.setUTCHours(H, i, s, ms);
+    } else {
+        date.setFullYear(Y, m - 1, d);
+        date.setHours(H, i, s, ms);
+    }
+
+    return date;
+}; // create_date
 
 /**
- * The function is used to fire an event.
+ * Extracts date and time parts from a Date.
  *
- *  @protected
+ * @protected
  *
- * @param {HTMLElement} oEmt
- * DOM node the event should be fired.
+ * @param {Date} date
+ * The date to read.
  *
- * @param {string} sEvt
- * Name of the event to be fired.
+ * @param {boolean} utc
+ * Whether to read UTC parts.
  *
- * @see SimpleCalendar.add_event
- * @see SimpleCalendar.remove_event
+ * @returns {{Y: number, m: number, d: number, H: number, i: number, s: number}}
+ * The numeric parts, with a one-based month.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
-SimpleCalendar.fire_event = function (oEmt, sEvt) {
-    if ("createEvent" in document) {
-        var evt = document.createEvent("HTMLEvents");
-        evt.initEvent(sEvt, false, true);
-        oEmt.dispatchEvent(evt);
-    } else
-        oEmt.fireEvent('on' + sEvt);
-};
+SimpleCalendar.get_date_parts = function (date, utc) {
+    if (utc) {
+        return {
+            Y: date.getUTCFullYear(),
+            m: date.getUTCMonth() + 1,
+            d: date.getUTCDate(),
+            H: date.getUTCHours(),
+            i: date.getUTCMinutes(),
+            s: date.getUTCSeconds(),
+        };
+    }
+
+    return {
+        Y: date.getFullYear(),
+        m: date.getMonth() + 1,
+        d: date.getDate(),
+        H: date.getHours(),
+        i: date.getMinutes(),
+        s: date.getSeconds(),
+    };
+}; // get_date_parts
 
 /**
- * The function is used to validate date parts, whether they comprise a valid date.
+ * Checks whether the given parts form a real Gregorian calendar date.
  *
- * @param {int} day
- * Day of the date.
+ * @param {number|string} day
+ * An integer day or a string of integer digits.
  *
- * @param {int} month
- * Month of the date.
+ * @param {number|string} month
+ * An integer month from 1 through 12 or its string representation.
  *
- * @param {int} year
- * Year of the date.
+ * @param {number|string} year
+ * An integer year or its string representation.
  *
  * @returns {boolean}
- * Returns True if the date is valid, otherwise False.
+ * Whether the parts identify an exact date within the JavaScript Date range.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.validate_date = function (day, month, year) {
-    if (isNaN(day) || isNaN(month) || isNaN(year)) {
-        return false;
-    }
-    
-    day = parseInt(day);
-    month = parseInt(month);
-    year = parseInt(year);
-    
-    if (month < 1 || month > 12) {
+    const valid_parts = [day, month, year].every((value) =>
+        (typeof value === 'number' || (typeof value === 'string' && /^[+-]?\d+$/.test(value)))
+        && Number.isSafeInteger(Number(value))
+    );
+
+    if (!valid_parts) {
         return false;
     }
 
-    // we get the number of days in the month by setting
-    // next month with the day 0.
-    // The month index starts with 0, so, the normal month
-    // value is already the next month
-    var dt = new Date(year, month, 0);
+    const expected = { Y: Number(year), m: Number(month), d: Number(day) };
+    const actual = SimpleCalendar.get_date_parts(SimpleCalendar.create_date(expected, true), true);
 
-    if (day < 1 || day > dt.getDate()) {
-        return false;
-    }
-
-    return true;
-};
+    return actual.Y === expected.Y && actual.m === expected.m && actual.d === expected.d;
+}; // validate_date
 
 /**
- * The function is used to get the current time zone.
+ * Gets the browser's current time zone.
  *
  * @returns {string}
- * Returns the code of the current time zone.
+ * The browser's time zone identifier.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.get_current_time_zone_code = function () {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
-};
+}; // get_current_time_zone_code
 
 /**
- * The function is used to get the current date/time based on the time zone.
+ * Reads the Gregorian calendar parts of an instant in a time zone.
  *
- * @param {CalendarConfigDef} config
- * The calendar config object.
- *
- * @returns {Date}
- * Returns the current date based on the time zone in config.
- *
- * @author
- * Oleg Schildt
- */
-SimpleCalendar.get_current_date = function (config) {
-    var today_date = new Date();
-    
-    current_time_zone_offset = SimpleCalendar.get_time_zone_offset(today_date, SimpleCalendar.get_current_time_zone_code());
-    var target_time_zone_offset = SimpleCalendar.get_time_zone_offset(today_date, config.time_zone);
-    var today_date = new Date(today_date.getTime() - current_time_zone_offset + target_time_zone_offset);
-
-    return today_date;
-};
-
-/**
- * The function is used to get the offset of a given time zone.
+ * @protected
  *
  * @param {Date} date
- * The base date used for getting the offset. The offset can depend on the date.
+ * The instant to read.
  *
- * @param {string} timeZone
- * The code of the time zone for getting the offset.
+ * @param {string} [time_zone]
+ * The target time zone, defaulting to the browser's zone.
  *
- * @returns {int}
- * Returns the offset of a given time zone in milliseconds.
+ * @returns {{Y: number, m: number, d: number, H: number, i: number, s: number, ms: number}}
+ * The wall-clock parts in the target zone.
  *
- * @author
- * Oleg Schildt
+ * @throws {RangeError}
+ * If the time zone is invalid or the date cannot be formatted.
+ *
+ * @author Oleg Schildt
  */
-SimpleCalendar.get_time_zone_offset = function (date, timeZone) {
+SimpleCalendar.get_zoned_date_parts = function (date, time_zone) {
     const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: timeZone,
-        timeZoneName: 'shortOffset'
+        timeZone: time_zone,
+        calendar: 'gregory',
+        numberingSystem: 'latn',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hourCycle: 'h23',
+        era: 'short',
     });
+    const parts = Object.fromEntries(formatter.formatToParts(date).map(({ type, value }) => [type, value]));
 
-    const parts = formatter.formatToParts(date);
-    const offsetPart = parts.find((part) => part.type === 'timeZoneName').value;
-
-    const match = offsetPart.match(/GMT([+-]?\d{1,2})(:(\d{2}))?/);
-
-    if (match) {
-        const hour = match[1];
-        const minute = match[3] || 0; 
-        
-        return (hour * 3600 + minute * 60) * 1000;
-    }
-
-    return 0;
-};
+    return {
+        Y: parts.era === 'BC' ? 1 - Number(parts.year) : Number(parts.year),
+        m: Number(parts.month),
+        d: Number(parts.day),
+        H: Number(parts.hour),
+        i: Number(parts.minute),
+        s: Number(parts.second),
+        ms: date.getUTCMilliseconds(),
+    };
+}; // get_zoned_date_parts
 
 /**
- * The function is used to convert date/time to a formatted string.
+ * Gets the current calendar date and time in the configured time zone.
  *
- * @param {Date} time
- * Date/time to be converted.
+ * @param {CalendarConfigDef} config
+ * The calendar configuration.
+ *
+ * @param {boolean} [utc=false]
+ * Whether UTC getters should expose the target zone's wall-clock parts.
+ * The default uses local getters, subject to native Date normalization.
+ *
+ * @returns {Date}
+ * A Date storing the wall-clock parts for calendar use.
+ *
+ * @throws {RangeError}
+ * If the configured time zone is invalid.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.get_current_date = function (config, utc = false) {
+    const parts = SimpleCalendar.get_zoned_date_parts(new Date(), config.time_zone);
+
+    return SimpleCalendar.create_date(parts, utc);
+}; // get_current_date
+
+/**
+ * Gets the offset from UTC for a time zone at a specified instant.
+ *
+ * @param {Date} date
+ * The instant at which to measure the offset.
+ *
+ * @param {string} time_zone
+ * The target time zone identifier.
+ *
+ * @returns {number}
+ * The signed offset in milliseconds.
+ *
+ * @throws {RangeError}
+ * If the time zone is invalid or the date cannot be formatted.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.get_time_zone_offset = function (date, time_zone) {
+    const parts = SimpleCalendar.get_zoned_date_parts(date, time_zone);
+
+    return SimpleCalendar.create_date(parts, true).getTime() - date.getTime();
+}; // get_time_zone_offset
+
+/**
+ * Splits a date format into supported tokens and literal characters.
+ *
+ * @protected
  *
  * @param {string} format
- * The date format in PHP format.
+ * A format using Y, m, d, H, i or s and backslash escapes.
+ *
+ * @returns {Array<{token: (string|undefined), literal: (string|undefined)}>}
+ * The tokens and literals in format order.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.get_format_parts = function (format) {
+    return Array.from(format.matchAll(/\\([\s\S])|([YmdHis])|([\s\S])/g), ([, escaped, token, literal]) => ({
+        token,
+        literal: escaped ?? literal,
+    }));
+}; // get_format_parts
+
+/**
+ * Formats a date using the supported PHP-style tokens.
+ *
+ * @param {?Date} time
+ * The date and time to format.
+ *
+ * @param {string} format
+ * The format, with Y, m, d, H, i and s tokens and backslash escapes.
+ *
+ * @param {boolean} [utc=false]
+ * Whether to read UTC date parts.
  *
  * @returns {string}
- * Returns formatted string representation of the date/time.
+ * The formatted date, or an empty string for a missing or invalid date.
  *
  * @see SimpleCalendar.string_to_time
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
-SimpleCalendar.time_to_string = function (time, format) {
-    if (!time) return "";
+SimpleCalendar.time_to_string = function (time, format, utc = false) {
+    if (!time || !Number.isFinite(time.getTime())) {
+        return '';
+    }
 
-    var timestr = format;
-    var aux;
+    const parts = SimpleCalendar.get_date_parts(time, utc);
 
-    aux = new String(time.getDate());
-    if (aux.length == 1) aux = "0" + "" + aux;
-    timestr = timestr.replace(/d/, aux);
+    return SimpleCalendar.get_format_parts(format).map(({ token, literal }) => {
+        if (!token) {
+            return literal;
+        }
 
-    aux = new String(time.getMonth() + 1);
-    if (aux.length == 1) aux = "0" + "" + aux;
-    timestr = timestr.replace(/m/, aux);
+        const value = parts[token];
+        const sign = value < 0 ? '-' : '';
+        const digits = String(Math.abs(value)).padStart(token === 'Y' ? 4 : 2, '0');
 
-    timestr = timestr.replace(/Y/, time.getFullYear());
-
-    aux = new String(time.getHours());
-    if (aux.length == 1) aux = "0" + "" + aux;
-    timestr = timestr.replace(/H/, aux);
-
-    aux = new String(time.getMinutes());
-    if (aux.length == 1) aux = "0" + "" + aux;
-    timestr = timestr.replace(/i/, aux);
-
-    aux = new String(time.getSeconds());
-    if (aux.length == 1) aux = "0" + "" + aux;
-    timestr = timestr.replace(/s/, aux);
-
-    return timestr;
-};
+        return sign + digits;
+    }).join('');
+}; // time_to_string
 
 /**
- * The function is used to convert a formatted string to date/time.
+ * Parses a complete date, a complete time, or both using a PHP-style format.
  *
  * @param {string} str
- * formatted string representation of the date/time.
+ * The input to match against the entire format.
  *
  * @param {string} format
- * The date format in PHP format.
+ * The format, with Y, m, d, H, i and s tokens and backslash escapes.
+ *
+ * @param {boolean} [utc=false]
+ * Whether to store the parsed parts in UTC.
+ *
+ * @param {Date} [base_date]
+ * The day to use for omitted date parts, defaulting to the current day.
  *
  * @returns {?Date}
- * Returns resulting date/time or null, if the input string is not a valid date/time.
+ * The resulting date, or null for a mismatch, conflicting repeat or invalid date or time.
  *
  * @see SimpleCalendar.time_to_string
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
-SimpleCalendar.string_to_time = function (str, format) {
-    var pattern = format;
+SimpleCalendar.string_to_time = function (str, format, utc = false, base_date) {
+    const tokens = [];
+    const pattern = SimpleCalendar.get_format_parts(format).map(({ token, literal }) => {
+        if (!token) {
+            return literal.replace(/[.*+?^$|(){}[\]\\]/g, '\\$&');
+        }
 
-    pattern = pattern.replace(/\./g, "\\.");
-    pattern = pattern.replace(/\//g, "\\/");
+        tokens.push(token);
 
-    pattern = pattern.replace(/d/, "([0-9]{1,2})");
-    pattern = pattern.replace(/m/, "([0-9]{1,2})");
-    pattern = pattern.replace(/Y/, "([0-9]{4})");
-    pattern = pattern.replace(/H/, "([0-9]{1,2})");
-    pattern = pattern.replace(/i/, "([0-9]{1,2})");
-    pattern = pattern.replace(/s/, "([0-9]{1,2})");
+        return token === 'Y' ? '([0-9]{4})' : '([0-9]{1,2})';
+    }).join('');
+    const result = new RegExp('^' + pattern + '$').exec(str);
 
-    var re = new RegExp("^" + pattern + "$");
-    var result = re.exec(str);
-
-    if (!result) return null;
-
-    var units = [];
-    units[0] = result[1];
-    units[1] = result[2];
-    units[2] = result[3];
-    units[3] = result[4];
-    units[4] = result[5];
-    units[5] = result[6];
-
-    var order = format.replace(/[^YmdHis]/g, "");
-
-    var i_year = order.indexOf("Y");
-    var i_month = order.indexOf("m");
-    var i_day = order.indexOf("d");
-    var i_hour = order.indexOf("H");
-    var i_minute = order.indexOf("i");
-    var i_second = order.indexOf("s");
-
-    var date_ok = false;
-    var time_ok = false;
-
-    if (i_year != -1 && i_month != -1 && i_day != -1) date_ok = true;
-    if (i_hour != -1 && i_minute != -1) time_ok = true;
-
-    if (!date_ok && !time_ok) return null;
-
-    var dt = new Date();
-
-    dt.setHours(0);
-    dt.setMinutes(0);
-    dt.setSeconds(0);
-    dt.setMilliseconds(0);
-
-    if (date_ok) {
-        if (!SimpleCalendar.validate_date(units[i_day], units[i_month], units[i_year])) return null;
-
-        // If we start setting with the day, it might not be possible
-        // to set the 29 of February, if the 29 of February of a leap year
-        // is chosen, but the current year is not a leap year.
-        
-        // So, we set first the month to January, because it always has 31 days.
-        dt.setMonth(0);
-        // now we can surely set the desired year.
-        dt.setFullYear(units[i_year]);
-        // now we can surely set the desired day.
-        dt.setDate(units[i_day]);
-        // now we can set the desired month.
-        dt.setMonth(units[i_month] - 1);
+    if (!result || result[0] !== str) {
+        return null;
     }
 
-    if (time_ok) {
-        if (isNaN(units[i_hour]) || units[i_hour] < 0 || units[i_hour] > 23) return null;
-        if (isNaN(units[i_minute]) || units[i_minute] < 0 || units[i_minute] > 59) return null;
+    const values = Object.create(null);
 
-        dt.setHours(units[i_hour]);
-        dt.setMinutes(units[i_minute]);
-    } else {
-        dt.setHours(0);
-        dt.setMinutes(0);
+    for (const [index, token] of tokens.entries()) {
+        const value = Number(result[index + 1]);
+
+        if (token in values && values[token] !== value) {
+            return null;
+        }
+
+        values[token] = value;
     }
 
-    if (i_second != -1) {
-        if (isNaN(units[i_second]) || units[i_second] < 0 || units[i_second] > 59) return null;
+    const has_date = ['Y', 'm', 'd'].every((token) => token in values);
+    const has_time = 'H' in values && 'i' in values;
 
-        dt.setSeconds(units[i_second]);
-    } else {
-        dt.setSeconds(0);
+    if (!has_date && !has_time) {
+        return null;
     }
 
-    return dt;
-};
+    const base = has_date ? values : SimpleCalendar.get_date_parts(base_date ?? new Date(), utc);
+    const parts = {
+        Y: values.Y ?? base.Y,
+        m: values.m ?? base.m,
+        d: values.d ?? base.d,
+        H: values.H ?? 0,
+        i: values.i ?? 0,
+        s: values.s ?? 0,
+    };
+    const date = SimpleCalendar.create_date(parts, utc);
+    const actual = SimpleCalendar.get_date_parts(date, utc);
+
+    // Date-only input stays valid when a local midnight transition advances the clock.
+    const same_day = actual.Y === parts.Y && actual.m === parts.m && actual.d === parts.d;
+    const same_fields = Object.keys(values).every((token) => values[token] === actual[token]);
+
+    return same_day && same_fields ? date : null;
+}; // string_to_time
 
 /**
- * The function lookups a parent width overflow scroll or hidden to check whether the calendar
- * should be placed above the field instead of below or alligned to the right of the field.
- *
- * @protected
- *
- * @param {HTMLElement} elm
- * The child element to start search.
- *
- * @returns {HTMLElement}
- * Returns the first found scrollable parent or BODY if none found.
- *
- * @author
- * Oleg Schildt
- */
-SimpleCalendar.lookup_scrollable_parent = function (elm) {
-    var cs, level = 1;
-
-    var current_parent = elm.parentNode;
-    while (current_parent instanceof Element) {
-        cs = window.getComputedStyle(current_parent);
-
-        if (cs.overflowY == "auto" || cs.overflowY == "hidden") {
-            return current_parent;
-        }
-
-        if (current_parent.tagName == "HTML") {
-            return current_parent;
-        }
-
-        current_parent = current_parent.parentNode;
-
-        level++;
-    }
-
-    return null;
-};
-
-/**
- * The function is used to position the calendar related to the target input field.
- *
- * @protected
- *
- * @param {HTMLElement} field
- * The target input field where the calendar should be positioned.
- *
- * @author
- * Oleg Schildt
- */
-SimpleCalendar.position_calendar = function (field) {
-    var field_rect = field.getBoundingClientRect();
-    var calendar_rect = field.my_calendar.getBoundingClientRect();
-    var table_rect = field.my_calendar.calendar_table.getBoundingClientRect();
-
-    var x = Math.round(field_rect.left - calendar_rect.left);
-    var y = Math.round(field_rect.top - calendar_rect.top) + field_rect.height + 2;
-
-    var scrollable_parent = SimpleCalendar.lookup_scrollable_parent(field.my_calendar);
-    if (scrollable_parent) {
-        var p_rect = scrollable_parent.getBoundingClientRect();
-
-        if ((calendar_rect.top + y + table_rect.height) > (p_rect.top + scrollable_parent.clientHeight)) {
-            y -= (field_rect.height + table_rect.height + 6);
-        }
-
-        if ((calendar_rect.left + x + table_rect.width) > (p_rect.left + scrollable_parent.clientWidth)) {
-            x += (field_rect.width - table_rect.width);
-        }
-    }
-
-    field.my_calendar.calendar_table.style.left = x + "px";
-    field.my_calendar.calendar_table.style.top = y + "px";
-};
-
-/**
- * This function is used to init the field for attaching the calendar functionality.
+ * Positions the shared calendar next to its active field within the visible viewport.
  *
  * @protected
  *
  * @param {HTMLInputElement} field
- * The target field where the calendar functionality is added.
+ * The active field used as the anchor.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.position_calendar = function (field) {
+    const calendar = SimpleCalendar.calendar;
+
+    if (calendar?.my_field !== field) {
+        return;
+    }
+
+    const viewport = window.visualViewport;
+    const left = viewport?.offsetLeft ?? 0;
+    const top = viewport?.offsetTop ?? 0;
+    const width = Math.min(document.documentElement.clientWidth, viewport?.width ?? Infinity);
+    const height = Math.min(document.documentElement.clientHeight, viewport?.height ?? Infinity);
+    const right = left + width;
+    const bottom = top + height;
+
+    calendar.style.setProperty('--calendar-available-width', width + 'px');
+    calendar.style.maxHeight = height + 'px';
+
+    const field_rect = field.getBoundingClientRect();
+    const popup_rect = calendar.getBoundingClientRect();
+    const below = field_rect.bottom + 2;
+    const above = field_rect.top - 4;
+    const use_above = below + popup_rect.height > bottom && above - top > bottom - below;
+    const preferred_x = field_rect.left + popup_rect.width <= right
+        ? field_rect.left
+        : field_rect.right - popup_rect.width;
+    const preferred_y = use_above ? above - popup_rect.height : below;
+
+    calendar.style.left = Math.max(left, Math.min(preferred_x, right - popup_rect.width)) + 'px';
+    calendar.style.top = Math.max(top, Math.min(preferred_y, bottom - popup_rect.height)) + 'px';
+}; // position_calendar
+
+/**
+ * Clears an invalid value when the user leaves an editable calendar field.
+ *
+ * @protected
+ *
+ * @param {HTMLInputElement} field
+ * The field whose value should be checked.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.clear_invalid_value = function (field) {
+    if (!field.readOnly && !field.disabled && field.value.trim()
+        && !SimpleCalendar.string_to_time(field.value.trim(), field.calendar_config.format, true)) {
+        field.value = '';
+    }
+}; // clear_invalid_value
+
+/**
+ * Handles focus moving from the field or calendar controls.
+ *
+ * @protected
+ *
+ * @param {HTMLInputElement} field
+ * The field associated with the focus transition.
+ *
+ * @param {?EventTarget} next
+ * The newly focused element, if the browser reports one.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.handle_focus_exit = function (field, next) {
+    const calendar = SimpleCalendar.calendar;
+
+    if (calendar.my_field !== field) {
+        SimpleCalendar.clear_invalid_value(field);
+
+        return;
+    }
+
+    if (next === field || (next instanceof Node && calendar.contains(next))) {
+        return;
+    }
+
+    if (next === null) {
+        // A blur can arrive without a focus target. Let the browser settle focus first.
+        clearTimeout(calendar.blur_timeout);
+        calendar.blur_timeout = setTimeout(SimpleCalendar.hide_if_inactive, 0);
+
+        return;
+    }
+
+    SimpleCalendar.clear_invalid_value(field);
+    SimpleCalendar.hide();
+}; // handle_focus_exit
+
+/**
+ * Connects an editable text input to the shared calendar.
+ *
+ * @protected
+ *
+ * @param {HTMLInputElement} field
+ * The text input to initialize.
  *
  * @param {CalendarConfigDef} config
- * The calendar config object.
+ * The field's calendar configuration.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.init_field = function (field, config) {
-    if (field.classList.contains("simple_calendar_added")) {
+    if (field.classList.contains('simple_calendar_added')) {
         return;
     }
 
     field.calendar_config = config;
-    
-    field.classList.add("simple_calendar_added");
-    
-    field.autocomplete = "off";
+    field.autocomplete = 'off';
 
-    if (config.placeholder) field.placeholder = config.placeholder;
-    
-    SimpleCalendar.add_event(field, "focus", function () {
-        SimpleCalendar.hide();
+    if (config.placeholder) {
+        field.placeholder = config.placeholder;
+    }
 
-        if (this.readOnly || this.disabled) return;
-        
-        SimpleCalendar.show(this);
-    });
+    field.classList.add('simple_calendar_added');
+    field.setAttribute('role', 'combobox');
+    field.setAttribute('aria-haspopup', 'dialog');
+    field.setAttribute('aria-controls', SimpleCalendar.calendar.id);
+    field.setAttribute('aria-expanded', 'false');
 
-    SimpleCalendar.add_event(field, "blur", function () {
-        this.my_calendar.i_am_still_active = false;
-
-        if (SimpleCalendar.string_to_time(this.value.trim(), this.calendar_config.format) === null) {
-            this.value = "";
+    field.addEventListener('focus', () => {
+        if (SimpleCalendar.calendar.returning_focus_to !== field) {
+            SimpleCalendar.show(field);
         }
-
-        setTimeout(function () {
-            SimpleCalendar.hide_if_inactive();
-        }, 300);
     });
-
-    SimpleCalendar.add_event(field, "keyup", function () {
-        SimpleCalendar.set_date_from_field();
+    field.addEventListener('click', () => {
+        SimpleCalendar.show(field);
     });
-};
+    field.addEventListener('blur', (event) => {
+        SimpleCalendar.handle_focus_exit(field, event.relatedTarget);
+    });
+    field.addEventListener('input', () => {
+        SimpleCalendar.set_date_from_field(field);
+    });
+    field.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' && !event.isComposing && !field.readOnly && !field.disabled) {
+            event.preventDefault();
+            SimpleCalendar.show(field);
+
+            if (SimpleCalendar.calendar.my_field === field) {
+                SimpleCalendar.focus_date();
+            }
+        }
+    });
+}; // init_field
 
 /**
- * The function is used to create the DOM object of the calendar.
+ * Creates the shared popup and its month, year and day controls.
  *
  * @protected
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.create_calendar = function () {
     if (SimpleCalendar.calendar !== null) {
         return;
     }
-    
-    var default_config = {};
 
-    default_config.time_zone = SimpleCalendar.get_current_time_zone_code();
+    const calendar = document.createElement('div');
+    const table = document.createElement('table');
+    const table_body = table.createTBody();
+    const header = table_body.insertRow().insertCell();
+    const controls = document.createElement('div');
 
-    var date = SimpleCalendar.get_current_date(default_config);
+    calendar.id = 'simple_calendar_popup';
 
-    default_config.format = "Y-m-d";
-    default_config.start_year = date.getFullYear() - 10;
-    default_config.end_year = date.getFullYear() + 10;
-
-    default_config.month_names = new Array(
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "Septemeber",
-        "October",
-        "November",
-        "December"
-    );
-
-    default_config.weekday_names = new Array(
-        "Mo",
-        "Tu",
-        "We",
-        "Th",
-        "Fr",
-        "Sa",
-        "Su"
-    );
-    
-    SimpleCalendar.calendar = document.createElement('div');
-    SimpleCalendar.calendar.classList.add('calendar_container');
-
-    SimpleCalendar.calendar.calendar_table = document.createElement('table');
-    var table_body = document.createElement("tbody");
-    SimpleCalendar.calendar.calendar_table.append(table_body);
-
-    var elm, option, tr, td, tmp;
-
-    tr = document.createElement('tr');
-    table_body.append(tr);
-
-    tmp = document.createElement('td');
-    tmp.classList.add('calendar_head');
-    tmp.colSpan = 7;
-    tr.append(tmp);
-
-    td = document.createElement('div');
-    td.classList.add('calendar_head_area');
-    tmp.append(td);
-
-    elm = document.createElement('button');
-    elm.type = "button";
-    elm.classList.add('arrow_left');
-    elm.innerHTML = '&#10148;';
-    SimpleCalendar.add_event(elm, "focus", function () {
-        SimpleCalendar.calendar.i_am_still_active = true;
-    });
-    SimpleCalendar.add_event(elm, "blur", function () {
-        SimpleCalendar.calendar.i_am_still_active = false;
-        setTimeout(function () {
-            SimpleCalendar.hide_if_inactive();
-        }, 300);
-    });
-    SimpleCalendar.add_event(elm, 'click', function () {
-        var year = SimpleCalendar.calendar.my_date.getFullYear();
-        var month = SimpleCalendar.calendar.my_date.getMonth();
-        SimpleCalendar.set_date(new Date(year, month, 0));
-    });
-    td.append(elm);
-
-    elm = document.createElement('select');
-    elm.classList.add('month_selector');
-    for (var i = 0; i < 12; i++) {
-        option = new Option(default_config.month_names[i], i, false, false);
-        elm.options[elm.options.length] = option;
+    for (let suffix = 2; document.getElementById(calendar.id); suffix++) {
+        calendar.id = 'simple_calendar_popup_' + suffix;
     }
-    SimpleCalendar.add_event(elm, "focus", function () {
-        SimpleCalendar.calendar.i_am_still_active = true;
-    });
-    SimpleCalendar.add_event(elm, "blur", function () {
-        SimpleCalendar.calendar.i_am_still_active = false;
-        setTimeout(function () {
-            SimpleCalendar.hide_if_inactive();
-        }, 300);
-    });
-    SimpleCalendar.add_event(elm, 'change', function () {
-        var year = SimpleCalendar.calendar.my_date.getFullYear();
-        SimpleCalendar.set_date(new Date(year, Number.parseInt(this.value) + 1, 0));
-    });
-    td.append(elm);
 
-    elm = document.createElement('select');
-    elm.classList.add('year_selector');
-    for (var i = default_config.start_year; i <= default_config.end_year; i++) {
-        option = new Option(i, i, false, false);
-        elm.options[elm.options.length] = option;
+    calendar.classList.add('calendar_container');
+    calendar.setAttribute('role', 'dialog');
+    calendar.setAttribute('aria-label', 'Calendar');
+
+    header.classList.add('calendar_head');
+    header.colSpan = 7;
+
+    controls.classList.add('calendar_head_area');
+    header.append(controls);
+
+    for (const [direction, label] of [[-1, 'Previous month'], [1, 'Next month']]) {
+        const arrow = document.createElement('button');
+
+        arrow.type = 'button';
+        arrow.classList.add(direction < 0 ? 'arrow_left' : 'arrow_right');
+        arrow.textContent = '➤';
+        arrow.setAttribute('aria-label', label);
+        arrow.addEventListener('click', () => {
+            if (calendar.my_field) {
+                const { Y, m } = SimpleCalendar.get_date_parts(calendar.my_date, true);
+
+                SimpleCalendar.set_date(SimpleCalendar.create_date({ Y, m: m + direction + 1, d: 0 }, true), true);
+            }
+        });
+
+        controls.append(arrow);
     }
-    SimpleCalendar.add_event(elm, "focus", function () {
-        SimpleCalendar.calendar.i_am_still_active = true;
-    });
-    SimpleCalendar.add_event(elm, "blur", function () {
-        SimpleCalendar.calendar.i_am_still_active = false;
-        setTimeout(function () {
-            SimpleCalendar.hide_if_inactive();
-        }, 300);
-    });
-    SimpleCalendar.add_event(elm, 'change', function () {
-        var month = SimpleCalendar.calendar.my_date.getMonth();
-        SimpleCalendar.set_date(new Date(Number.parseInt(this.value), month + 1, 0));
-    });
-    td.append(elm);
 
-    elm = document.createElement('button');
-    elm.type = "button";
-    elm.classList.add('arrow_right');
-    elm.innerHTML = '&#10148;';
-    SimpleCalendar.add_event(elm, "focus", function () {
-        SimpleCalendar.calendar.i_am_still_active = true;
-    });
-    SimpleCalendar.add_event(elm, "blur", function () {
-        SimpleCalendar.calendar.i_am_still_active = false;
-        setTimeout(function () {
-            SimpleCalendar.hide_if_inactive();
-        }, 300);
-    });
-    SimpleCalendar.add_event(elm, 'click', function () {
-        var year = SimpleCalendar.calendar.my_date.getFullYear();
-        var month = SimpleCalendar.calendar.my_date.getMonth();
-        SimpleCalendar.set_date(new Date(year, month + 2, 0));
-    });
-    td.append(elm);
+    for (const [name, label] of [['month', 'Month'], ['year', 'Year']]) {
+        const select = document.createElement('select');
 
-    tr = document.createElement('tr');
-    tr.classList.add('weekday_head');
-    for (var j = 0; j < 7; j++) {
-        td = document.createElement('td');
-        td.setAttribute("data-weekday", j);
-        
-        td.classList.add('weekday');
-        if (j > 4) td.classList.add('weekend');
-        td.innerHTML = default_config.weekday_names[j];
-        tr.append(td);
+        select.classList.add(name + '_selector');
+        select.setAttribute('aria-label', label);
+        select.addEventListener('change', () => {
+            if (calendar.my_field && select.value !== '') {
+                const { Y, m } = SimpleCalendar.get_date_parts(calendar.my_date, true);
+                const year = name === 'year' ? Number(select.value) : Y;
+                const month = name === 'month' ? Number(select.value) + 1 : m;
+
+                SimpleCalendar.set_date(SimpleCalendar.create_date({ Y: year, m: month + 1, d: 0 }, true), true);
+            }
+        });
+
+        controls.insertBefore(select, controls.lastElementChild);
     }
-    table_body.append(tr);
 
-    for (var i = 0; i < 6; i++) {
-        tr = document.createElement('tr');
-        table_body.append(tr);
+    const weekdays = table_body.insertRow();
 
-        for (var j = 0; j < 7; j++) {
-            td = document.createElement('td');
-            td.classList.add('day');
-            if (j > 4) td.classList.add('weekend');
-            tr.append(td);
+    weekdays.classList.add('weekday_head');
 
-            SimpleCalendar.add_event(td, 'click', function () {
-                if (!SimpleCalendar.calendar.my_field) {
+    for (let column = 0; column < 7; column++) {
+        const weekday = document.createElement('th');
+
+        weekday.scope = 'col';
+        weekday.dataset.weekday = column;
+        weekday.classList.add('weekday');
+        weekday.classList.toggle('weekend', column > 4);
+
+        weekdays.append(weekday);
+    }
+
+    for (let week = 0; week < 6; week++) {
+        const row = table_body.insertRow();
+
+        for (let column = 0; column < 7; column++) {
+            const cell = row.insertCell();
+            const button = document.createElement('button');
+
+            cell.classList.add('day');
+            cell.classList.toggle('weekend', column > 4);
+            button.type = 'button';
+            button.tabIndex = -1;
+
+            cell.append(button);
+
+            cell.addEventListener('click', () => {
+                const field = calendar.my_field;
+
+                if (!field || field.readOnly || field.disabled || button.disabled) {
                     return;
                 }
-                
-                // IMPORTANT! The value must be set before changing the calendar month
-                SimpleCalendar.calendar.my_field.value = SimpleCalendar.time_to_string(this.my_date, SimpleCalendar.calendar.my_field.calendar_config.format);
-                SimpleCalendar.fire_event(SimpleCalendar.calendar.my_field, "change");
 
-                SimpleCalendar.set_date(this.my_date);
-                SimpleCalendar.hide();
+                field.value = SimpleCalendar.time_to_string(cell.my_date, field.calendar_config.format, true);
+
+                // Finish closing the popup before invoking external change listeners.
+                SimpleCalendar.hide(true);
+                SimpleCalendar.fire_event(field, 'change');
             });
         }
     }
 
-    SimpleCalendar.calendar.append(SimpleCalendar.calendar.calendar_table);
+    calendar.addEventListener('focusout', (event) => {
+        if (calendar.my_field) {
+            SimpleCalendar.handle_focus_exit(calendar.my_field, event.relatedTarget);
+        }
+    });
+    calendar.addEventListener('mousedown', (event) => {
+        if (event.button === 0 && document.activeElement === calendar.my_field && !event.target.closest('select')) {
+            // Keep the field focused when a browser does not focus a clicked button.
+            event.preventDefault();
+        }
+    });
+    calendar.addEventListener('keydown', SimpleCalendar.handle_day_key);
 
-    document.body.append(SimpleCalendar.calendar);
-};
+    calendar.calendar_table = table;
+    SimpleCalendar.calendar = calendar;
+
+    calendar.append(table);
+    document.body.append(calendar);
+    SimpleCalendar.observe_escape();
+}; // create_calendar
 
 /**
- * The function is used to set the date on the calendar from the value in the target input field.
+ * Updates the calendar from the active field, falling back to today in its time zone.
  *
  * @protected
  *
- * @author
- * Oleg Schildt
+ * @param {HTMLInputElement} [field]
+ * The field that triggered the update, defaulting to the active field.
+ *
+ * @author Oleg Schildt
  */
-SimpleCalendar.set_date_from_field = function () {
-    var date = SimpleCalendar.get_current_date(SimpleCalendar.calendar.my_field.calendar_config);
-    if (SimpleCalendar.calendar.my_field.value.trim()) {
-        date = SimpleCalendar.string_to_time(SimpleCalendar.calendar.my_field.value.trim(), SimpleCalendar.calendar.my_field.calendar_config.format);
-        if (date === null) {
-            date = SimpleCalendar.get_current_date(SimpleCalendar.calendar.my_field.calendar_config);
-        }
+SimpleCalendar.set_date_from_field = function (field = SimpleCalendar.calendar?.my_field) {
+    if (!field || SimpleCalendar.calendar.my_field !== field) {
+        return;
     }
 
-    SimpleCalendar.set_date(date);
-};
+    const config = field.calendar_config;
+    const today = SimpleCalendar.get_current_date(config, true);
+    const date = SimpleCalendar.string_to_time(field.value.trim(), config.format, true, today) ?? today;
+
+    SimpleCalendar.set_date(date, true, today);
+}; // set_date_from_field
 
 /**
- * The type definition of the calendar configuration, see {@link SimpleCalendar.assign}.
+ * The configuration accepted by SimpleCalendar.assign.
  *
- * @typedef CalendarConfigDef
+ * @typedef {Object} CalendarConfigDef
  *
- * @type {Object}
+ * @property {string} [format=Y-m-d]
+ * A PHP-style format using Y, m, d, H, i and s. A backslash escapes the next character.
  *
- * @property {string} format=Y-m-d
- * The date format of the calendar in PHP format.
+ * @property {string} [time_zone]
+ * The time zone used to determine today. Defaults to the browser's zone.
  *
- * @property {string} time_zone
- * The time zone of the calendar. It is necessary to define the correct today day. 
- * If not specified, the time zone of the browser is used.
+ * @property {string} [placeholder]
+ * The hint shown in the input field.
  *
- * @property {string} placeholder
- * The hint for the date format.
+ * @property {number|string} [start_year]
+ * The first year in the default year list, or the current year minus ten.
  *
- * @property {int} start_year=current_year-10
- * The start year in the year list.
+ * @property {number|string} [end_year]
+ * The last year in the default year list, or the current year plus ten.
  *
- * @property {int} end_year=current_year+10
- * The end year in the year list.
+ * @property {Date[]} [holidays]
+ * Holidays compared by local date. Use the year 1970 for annually recurring dates.
  *
- * @property {Array.<Date>} holidays
- * The list of the holidays. They are marked specially.
- * The holidays should be specified as Date objects. If a holiday repeats every year,
- * set its year to 1970.
+ * @property {string[]} [month_names]
+ * Twelve month names in calendar order. Defaults to English.
  *
- * @property {Array.<string>} month_names=English_names
- * The list of the month names. Per default, English names are used.
+ * @property {string[]} [weekday_names]
+ * Seven weekday names starting on Monday. Defaults to English.
  *
- * @property {Array.<string>} weekday_names=English_names
- * The list of the weekday names. Per default, English names are used.
+ * @author Oleg Schildt
  */
 
 /**
- * This function should be used to add calendar functionality to an input field.
+ * Adds calendar functionality to a text input or to each text input matched by a selector.
  *
  * @param {string|HTMLInputElement} field_ref
- * The target field where the calendar functionality should be added - an element or selector.
+ * A CSS selector such as #begin_date, or the text input element itself.
  *
- * @param {CalendarConfigDef} config
- * The calendar config object.
+ * @param {CalendarConfigDef} [config]
+ * The optional calendar configuration.
+ *
+ * @throws {DOMException}
+ * If the CSS selector is invalid.
+ *
+ * @throws {RangeError}
+ * If the configured time zone is invalid.
  *
  * @tutorial 5.using_calendar
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.assign = function (field_ref, config) {
-    if (!field_ref) return;
-    
-    if (!config) config = {};
+    const fields = typeof field_ref === 'string' && field_ref
+        ? Array.from(document.querySelectorAll(field_ref))
+        : [field_ref];
+    const inputs = fields.filter((field) => field instanceof HTMLInputElement && field.type === 'text');
 
-    if (!config.time_zone) {
-        config.time_zone = SimpleCalendar.get_current_time_zone_code();
+    if (inputs.length === 0) {
+        return;
     }
 
-    var date = SimpleCalendar.get_current_date(config);
+    config = config || {};
+    config.time_zone = config.time_zone || SimpleCalendar.get_current_time_zone_code();
 
-    if (!config.format) config.format = "Y-m-d";
-    if (!config.start_year) config.start_year = date.getFullYear() - 10;
-    if (!config.end_year) config.end_year = date.getFullYear() + 10;
+    const year = SimpleCalendar.get_current_date(config, true).getUTCFullYear();
+    const first_year = Number(String(config.start_year ?? '').trim() || year - 10);
+    const last_year = Number(String(config.end_year ?? '').trim() || year + 10);
 
+    config.format = config.format || 'Y-m-d';
+    config.start_year = Math.max(0, Math.min(9999, Number.isInteger(first_year) ? first_year : year - 10));
+    config.end_year = Math.max(0, Math.min(9999, Number.isInteger(last_year) ? last_year : year + 10));
 
-    if (!config.month_names) {
-        config.month_names = new Array(
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "Septemeber",
-            "October",
-            "November",
-            "December"
-        );
+    if (config.start_year > config.end_year) {
+        [config.start_year, config.end_year] = [config.end_year, config.start_year];
     }
 
-    if (!config.weekday_names) {
-        config.weekday_names = new Array(
-            "Mo",
-            "Tu",
-            "We",
-            "Th",
-            "Fr",
-            "Sa",
-            "Su"
-        );
-    }
-    
+    config.month_names = config.month_names || [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    config.weekday_names = config.weekday_names || ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
     SimpleCalendar.create_calendar();
 
-    var fields = [];
-
-    if ((field_ref instanceof HTMLInputElement && field_ref.type == 'text')) {
-        fields.push(field_ref);
-    } else if (typeof field_ref == "string" || typeof field_ref == "number") {
-        fields = document.querySelectorAll(field_ref);
-    } else {
-        return;
+    for (const field of inputs) {
+        SimpleCalendar.init_field(field, config);
     }
-
-    for (var i = 0; i < fields.length; i++) {
-        SimpleCalendar.init_field(fields[i], config);
-    }
-};
+}; // assign
 
 /**
- * The function is an auxiliary function that checks whether the date is a holiday due to the config settings.
+ * Checks whether a calendar day is a configured holiday.
  *
  * @protected
  *
  * @param {Date} date
- * The date to check.
+ * The calendar day to check.
  *
  * @param {CalendarConfigDef} config
- * The calendar config object.
+ * The configuration containing the holiday dates.
+ *
+ * @param {boolean} [utc=false]
+ * Whether to read the calendar day's UTC parts. Holiday Date objects use local parts.
  *
  * @returns {boolean}
- * Returns True if the date is a holiday, otherwise False.
+ * Whether the day matches a one-time or annually recurring holiday.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
-SimpleCalendar.is_holiday = function (date, config) {
-    if (!config.holidays) return false;
+SimpleCalendar.is_holiday = function (date, config, utc = false) {
+    const { Y, m, d } = SimpleCalendar.get_date_parts(date, utc);
 
-    var idx = -1;
-    config.holidays.forEach(function (item, index) {
-        var local = new Date(item);
+    return config.holidays?.some((holiday) => {
+        const parts = SimpleCalendar.get_date_parts(holiday, false);
 
-        if (local.getFullYear() == 1970) {
-            local.setFullYear(date.getFullYear());
-        }
-
-        if (date.getTime() == local.getTime())
-            idx = index;
-    });
-
-    return idx != -1;
-};
+        return (parts.Y === Y || parts.Y === 1970) && parts.m === m && parts.d === d;
+    }) ?? false;
+}; // is_holiday
 
 /**
- * This function is used to attach the field to the calendard control.
+ * Attaches the shared calendar to a field and populates its controls.
  *
  * @protected
- *
- * @param {HTMLInputElement} field
- * The target field where the calendar functionality is added.
- *
  * @see SimpleCalendar.detach_from_calender
  *
- * @author
- * Oleg Schildt
+ * @param {HTMLInputElement} field
+ * The field whose options and value are shown.
+ *
+ * @author Oleg Schildt
  */
 SimpleCalendar.attach_to_calender = function (field) {
-    SimpleCalendar.calendar.my_field = field;
-    field.my_calendar = SimpleCalendar.calendar;
-    
-    var option;
-    
-    // Adjust month names
-    var elms = SimpleCalendar.calendar.querySelectorAll(".month_selector");
-    for (var i = 0; i < elms.length; i++) {
-        elms[i].options.length = 0;
-        
-        for (var j = 0; j < 12; j++) {
-            option = new Option(field.calendar_config.month_names[j], j, false, false);
-            elms[i].options[elms[i].options.length] = option;
-        }
-    }
-    
-    // Adjust year range
-    elms = SimpleCalendar.calendar.querySelectorAll(".year_selector");
-    for (var i = 0; i < elms.length; i++) {
-        elms[i].options.length = 0;
+    const calendar = SimpleCalendar.calendar;
+    const config = field.calendar_config;
+    const month_select = calendar.querySelector('.month_selector');
+    const year_select = calendar.querySelector('.year_selector');
 
-        for (var y = field.calendar_config.start_year; y <= field.calendar_config.end_year; y++) {
-            option = new Option(y, y, false, false);
-            elms[i].options[elms[i].options.length] = option;
-        }
+    calendar.my_field = field;
+    field.my_calendar = calendar;
+    month_select.options.length = 0;
+    year_select.options.length = 0;
+    calendar.extra_year_option = null;
+
+    for (let month = 0; month < 12; month++) {
+        month_select.add(new Option(config.month_names[month], month));
     }
 
-    // Adjust weekday names
-    elms = SimpleCalendar.calendar.querySelectorAll(".weekday_head .weekday");
-    for (var i = 0; i < elms.length; i++) {
-        elms[i].innerHTML = field.calendar_config.weekday_names[elms[i].getAttribute("data-weekday")];
+    const options = document.createDocumentFragment();
+
+    for (let year = config.start_year; year <= config.end_year; year++) {
+        options.append(new Option(year, year));
     }
 
+    year_select.append(options);
+
+    for (const weekday of calendar.querySelectorAll('.weekday_head .weekday')) {
+        weekday.textContent = config.weekday_names[weekday.dataset.weekday];
+    }
+
+    SimpleCalendar.set_date_from_field(field);
     SimpleCalendar.add_observation_events(field);
-
-    SimpleCalendar.set_date_from_field();
-};
+}; // attach_to_calender
 
 /**
- * This function is used to detach the field from the calendard control.
+ * Detaches the shared calendar and removes the field's positioning observers.
  *
  * @protected
- *
- * @param {HTMLInputElement} field
- * The target field where the calendar functionality is added.
- *
  * @see SimpleCalendar.attach_to_calender
  *
- * @author
- * Oleg Schildt
+ * @param {HTMLInputElement} field
+ * The field currently attached to the calendar.
+ *
+ * @author Oleg Schildt
  */
 SimpleCalendar.detach_from_calender = function (field) {
-    SimpleCalendar.calendar.my_field = null;
+    const calendar = SimpleCalendar.calendar;
 
+    calendar.my_field = null;
+    field.my_calendar = null;
+
+    clearTimeout(calendar.blur_timeout);
     SimpleCalendar.remove_observation_events(field);
-};
+}; // detach_from_calender
 
 /**
- * The function is an auxiliary function that shows the calendar.
+ * Opens the calendar for an assigned editable field.
  *
  * @protected
+ * @see SimpleCalendar.hide
  *
  * @param {HTMLInputElement} field
- * The target field where the calendar functionality is added.
+ * The assigned field that anchors the calendar.
  *
- * @see SimpleCalendar.hide
- * @see SimpleCalendar.hide_if_inactive
- *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.show = function (field) {
-    if (SimpleCalendar.calendar.my_field == field) {
-        field.my_calendar.i_am_still_active = true;
-        field.my_calendar.style.display = 'block';
+    const calendar = SimpleCalendar.calendar;
+
+    if (!calendar || !field?.calendar_config || field.readOnly || field.disabled) {
+        return;
+    }
+
+    if (calendar.my_field === field) {
         SimpleCalendar.position_calendar(field);
 
-        if (SimpleCalendar.handler) SimpleCalendar.handler();
         return;
     }
 
     SimpleCalendar.hide();
-    
+
+    // A visibility callback can open the calendar for a different field.
+    if (calendar.my_field) {
+        return;
+    }
+
     SimpleCalendar.attach_to_calender(field);
 
-    field.my_calendar.i_am_still_active = true;
-    field.my_calendar.style.display = 'block';
-    SimpleCalendar.position_calendar(field);
+    calendar.style.display = 'block';
+    calendar.scrollTop = 0;
 
-    if (SimpleCalendar.handler) SimpleCalendar.handler();
-};
+    field.setAttribute('aria-expanded', 'true');
+    SimpleCalendar.position_calendar(field);
+    SimpleCalendar.handler?.();
+}; // show
 
 /**
- * The function is an auxiliary function that hides the calendar.
+ * Closes the calendar and optionally moves focus from the popup to its field.
  *
  * @protected
- *
  * @see SimpleCalendar.show
  * @see SimpleCalendar.hide_if_inactive
  *
- * @author
- * Oleg Schildt
+ * @param {boolean} [restore_focus=false]
+ * Whether to restore focus to the field when a popup control has focus.
+ *
+ * @author Oleg Schildt
  */
-SimpleCalendar.hide = function () {
-    if (SimpleCalendar.calendar.my_field) {
-        SimpleCalendar.detach_from_calender(SimpleCalendar.calendar.my_field);
-    }    
+SimpleCalendar.hide = function (restore_focus = false) {
+    const calendar = SimpleCalendar.calendar;
+    const field = calendar?.my_field;
 
-    SimpleCalendar.calendar.style.display = 'none';
-    SimpleCalendar.calendar.i_am_still_active = false;
+    if (!field) {
+        return;
+    }
 
-    if (SimpleCalendar.handler) SimpleCalendar.handler();
-};
+    const should_restore = restore_focus && calendar.contains(document.activeElement);
 
+    SimpleCalendar.detach_from_calender(field);
+
+    calendar.style.display = 'none';
+
+    field.setAttribute('aria-expanded', 'false');
+
+    if (should_restore) {
+        calendar.returning_focus_to = field;
+
+        try {
+            field.focus({ preventScroll: true });
+        } finally {
+            calendar.returning_focus_to = null;
+        }
+    }
+
+    SimpleCalendar.handler?.();
+}; // hide
 
 /**
- * The function is an auxiliary function that hides the calendar if it is no more active.
+ * Closes the calendar if focus has moved outside its field and controls.
  *
  * @protected
+ * @see SimpleCalendar.handle_focus_exit
  *
- * @see SimpleCalendar.show
- * @see SimpleCalendar.hide
- *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.hide_if_inactive = function () {
-    if (SimpleCalendar.calendar.i_am_still_active) return;
+    const calendar = SimpleCalendar.calendar;
+    const field = calendar?.my_field;
+    const active = document.activeElement;
 
-    SimpleCalendar.hide();
-};
+    if (field && active !== field && !calendar.contains(active)) {
+        SimpleCalendar.clear_invalid_value(field);
+        SimpleCalendar.hide();
+    }
+}; // hide_if_inactive
 
 /**
- * The function is an auxiliary function for getting the previous day of a day.
+ * Gets the previous calendar day without mutating the input date.
  *
  * @param {Date} date
- * Base date/time.
+ * The date from which to move back one day.
  *
  * @see SimpleCalendar.get_next_day
  *
- * @author
- * Oleg Schildt
+ * @returns {Date}
+ * The previous local calendar day, with the time preserved where possible.
+ *
+ * @author Oleg Schildt
  */
 SimpleCalendar.get_previous_day = function (date) {
-  var previousDay = new Date(date);
-  
-  if (date.getDate() === 1) {
-    previousDay.setMonth(date.getMonth() - 1);
-    previousDay.setDate(new Date(date.getFullYear(), date.getMonth(), 0).getDate());
-  } else {
-    previousDay.setDate(date.getDate() - 1);
-  }
-  
-  return previousDay;
-};
+    const previous = new Date(date);
+
+    previous.setDate(previous.getDate() - 1);
+
+    return previous;
+}; // get_previous_day
 
 /**
- * The function is an auxiliary function for getting the next day of a day.
+ * Gets the next calendar day without mutating the input date.
  *
  * @param {Date} date
- * Base date/time.
- * 
+ * The date from which to advance one day.
+ *
+ * @param {boolean} [utc=false]
+ * Whether to advance the UTC day.
+ *
  * @see SimpleCalendar.get_previous_day
- * 
- * @author
- * Oleg Schildt
+ *
+ * @returns {Date}
+ * The next calendar day, with the time preserved where possible.
+ *
+ * @author Oleg Schildt
  */
-SimpleCalendar.get_next_day = function (date) {
-  var nextDay = new Date(date);
+SimpleCalendar.get_next_day = function (date, utc = false) {
+    const next = new Date(date);
 
-  nextDay.setDate(date.getDate() + 1);
+    if (utc) {
+        next.setUTCDate(next.getUTCDate() + 1);
+    } else {
+        next.setDate(next.getDate() + 1);
+    }
 
-  return nextDay;
-};
+    return next;
+}; // get_next_day
 
 /**
- * The function is an auxiliary function that sets the date on the calendar.
+ * Renders the month containing the requested day.
  *
  * @protected
  *
  * @param {Date} date
- * Date/time to be set.
+ * The date to display for an open calendar. Its year must be from 0 to 9999.
  *
- * @author
- * Oleg Schildt
+ * @param {boolean} [utc=false]
+ * Whether to read the input date's UTC parts.
+ *
+ * @param {Date} [today]
+ * Today's civil date stored in UTC, if it has already been determined.
+ *
+ * @author Oleg Schildt
  */
-SimpleCalendar.set_date = function (date) {
-    SimpleCalendar.calendar.my_date = date;
+SimpleCalendar.set_date = function (date, utc = false, today) {
+    const calendar = SimpleCalendar.calendar;
+    const field = calendar?.my_field;
+    const parts = SimpleCalendar.get_date_parts(date, utc);
+    const { Y, m, d } = parts;
 
-    var elms = SimpleCalendar.calendar.getElementsByClassName('month_selector');
-    if (elms.length > 0) {
-        elms[0].value = date.getMonth();
-    }
-    
-    elms = SimpleCalendar.calendar.getElementsByClassName('year_selector');
-    if (elms.length > 0) {
-        elms[0].value = date.getFullYear();
-    }
-
-    elms = SimpleCalendar.calendar.getElementsByClassName('day');
-    if (elms.length == 0) {
-        alert('No day cells found!');
+    if (!field || !Number.isInteger(Y) || Y < 0 || Y > 9999) {
         return;
     }
 
-    var today_date = SimpleCalendar.get_current_date(SimpleCalendar.calendar.my_field.calendar_config);
-    
-    var first_day_date = new Date(date.getFullYear(), date.getMonth(), 1);
-    var first_day_of_week = first_day_date.getDay();
-    if (first_day_of_week == 0) first_day_of_week = 7;
+    const config = field.calendar_config;
+    const year_select = calendar.querySelector('.year_selector');
+    const today_parts = SimpleCalendar.get_date_parts(today ?? SimpleCalendar.get_current_date(config, true), true);
+    const first_day = SimpleCalendar.create_date({ Y, m, d: 1 }, true);
+    const days_before = (first_day.getUTCDay() + 6) % 7;
+    let current = SimpleCalendar.create_date({ Y, m, d: 1 - days_before }, true);
 
-    var other_month_date = SimpleCalendar.get_previous_day(first_day_date);
+    // UTC keeps the civil date grid independent of the browser's daylight-saving transitions.
+    calendar.my_date = utc ? date : SimpleCalendar.create_date(parts, true);
+    calendar.querySelector('.month_selector').value = m - 1;
+    calendar.querySelector('.arrow_left').disabled = Y === 0 && m === 1;
+    calendar.querySelector('.arrow_right').disabled = Y === 9999 && m === 12;
 
-    var current_date = new Date(other_month_date.getFullYear(), other_month_date.getMonth(), other_month_date.getDate() - first_day_of_week + 2, 0, 0, 0);
+    if (calendar.extra_year_option && calendar.extra_year_option.value !== String(Y)) {
+        calendar.extra_year_option.remove();
 
-    for (var i = 0; i < elms.length; i++) {
-        elms[i].classList.remove('holiday');
-        elms[i].classList.remove('other_month');
-        elms[i].classList.remove('today');
-        elms[i].classList.remove('selected_date');
-
-        elms[i].innerHTML = current_date.getDate();
-        elms[i].my_date = current_date;
-
-        if (SimpleCalendar.is_holiday(current_date, SimpleCalendar.calendar.my_field.calendar_config)) elms[i].classList.add('holiday');
-
-        if (current_date.getMonth() != date.getMonth() ||
-            current_date.getFullYear() != date.getFullYear()) elms[i].classList.add('other_month');
-
-        if (current_date.getFullYear() == today_date.getFullYear() &&
-            current_date.getMonth() == today_date.getMonth() &&
-            current_date.getDate() == today_date.getDate()
-        ) elms[i].classList.add('today');
-
-        if (SimpleCalendar.calendar.my_date &&
-            current_date.getFullYear() == SimpleCalendar.calendar.my_date.getFullYear() &&
-            current_date.getMonth() == SimpleCalendar.calendar.my_date.getMonth() &&
-            current_date.getDate() == SimpleCalendar.calendar.my_date.getDate()
-        ) elms[i].classList.add('selected_date');
-
-        current_date = SimpleCalendar.get_next_day(current_date);
+        calendar.extra_year_option = null;
     }
-};
+
+    if ((Y < config.start_year || Y > config.end_year) && !calendar.extra_year_option) {
+        calendar.extra_year_option = new Option(Y, Y);
+
+        year_select.add(calendar.extra_year_option, Y < config.start_year ? 0 : year_select.options.length);
+    }
+
+    year_select.value = Y;
+
+    for (const cell of calendar.querySelectorAll('.day')) {
+        const day = SimpleCalendar.get_date_parts(current, true);
+        const button = cell.firstElementChild;
+        const in_month = day.Y === Y && day.m === m;
+        const is_selected = in_month && day.d === d;
+        const is_today = day.Y === today_parts.Y && day.m === today_parts.m && day.d === today_parts.d;
+
+        cell.my_date = current;
+        button.textContent = day.d;
+        button.tabIndex = is_selected ? 0 : -1;
+        button.disabled = day.Y < 0 || day.Y > 9999;
+
+        button.setAttribute('aria-label', config.month_names[day.m - 1] + ' ' + day.d + ', ' + day.Y);
+
+        if (is_today) {
+            button.setAttribute('aria-current', 'date');
+        } else {
+            button.removeAttribute('aria-current');
+        }
+
+        cell.classList.toggle('holiday', SimpleCalendar.is_holiday(current, config, true));
+        cell.classList.toggle('other_month', !in_month);
+        cell.classList.toggle('today', is_today);
+        cell.classList.toggle('selected_date', is_selected);
+
+        current = SimpleCalendar.get_next_day(current, true);
+    }
+}; // set_date
 
 /**
- * The function is an auxiliary function for removing observation events.
+ * Focuses the day that is currently highlighted in the calendar.
  *
  * @protected
  *
- * @param {HTMLElement} field
- * The target input field with the calendar.
+ * @author Oleg Schildt
+ */
+SimpleCalendar.focus_date = function () {
+    SimpleCalendar.calendar.querySelector('.selected_date button')?.focus();
+}; // focus_date
+
+/**
+ * Moves the highlighted day in response to the arrow keys in the date table.
  *
- * @see SimpleCalendar.add_observation_events
+ * @protected
  *
- * @author
- * Oleg Schildt
+ * @param {KeyboardEvent} event
+ * A key press on a day button.
+ *
+ * @author Oleg Schildt
+ */
+SimpleCalendar.handle_day_key = function (event) {
+    const cell = event.target.closest('.day');
+    const offset = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key];
+
+    if (!cell || event.isComposing || typeof offset !== 'number') {
+        return;
+    }
+
+    const parts = SimpleCalendar.get_date_parts(cell.my_date, true);
+    const date = SimpleCalendar.create_date({ ...parts, d: parts.d + offset }, true);
+
+    event.preventDefault();
+    SimpleCalendar.set_date(date, true);
+    SimpleCalendar.focus_date();
+}; // handle_day_key
+
+/**
+ * Removes the active field's resize and scroll listeners.
+ *
+ * @protected
+ *
+ * @param {HTMLInputElement} field
+ * The field whose active observation session is ending.
+ *
+ * @author Oleg Schildt
  */
 SimpleCalendar.remove_observation_events = function (field) {
-    for (const fn of field.event_cleanup_fns) fn();
-};
+    const cleanup = field.calendar_observation_cleanup;
+
+    delete field.calendar_observation_cleanup;
+
+    cleanup?.();
+}; // remove_observation_events
 
 /**
- * The function is an auxiliary function for adding observation events.
+ * Updates the popup position when its anchor or visible area changes.
  *
  * @protected
  *
- * @param {HTMLElement} field
- * The target input field with the calendar.
+ * @param {HTMLInputElement} field
+ * The field whose ancestors and size are observed.
  *
- * @see SimpleCalendar.remove_observation_events
- *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.add_observation_events = function (field) {
-    SimpleCalendar.collect_ancestors(field);
+    const calendar = SimpleCalendar.calendar;
+    const viewport = window.visualViewport;
+    const ancestors = SimpleCalendar.collect_ancestors(field);
+    const controller = new AbortController();
+    const options = { signal: controller.signal, passive: true };
+    let frame = null;
 
-    field.event_cleanup_fns = [];
-    
-    for (const ancestor of field.ancestors) {
-        const reposition_fn = function () {
-            SimpleCalendar.position_calendar(field);  
-        };
+    const schedule_position = () => {
+        if (frame === null) {
+            frame = requestAnimationFrame(() => {
+                frame = null;
 
-        SimpleCalendar.add_event(ancestor, "scroll", reposition_fn);
-        field.event_cleanup_fns.push(function () {
-            SimpleCalendar.remove_event(ancestor, "scroll", reposition_fn);
-        });
-
-        const ro = new ResizeObserver(reposition_fn);
-        ro.observe(ancestor);
-
-        field.event_cleanup_fns.push(function () {
-            ro.disconnect();
-        });
-    }
-
-    const reposition_fn = function () {
-        SimpleCalendar.position_calendar(field);  
+                SimpleCalendar.position_calendar(field);
+            });
+        }
     };
 
-    SimpleCalendar.add_event(window, "resize", reposition_fn);
-    field.event_cleanup_fns.push(function () {
-        SimpleCalendar.remove_event(window, "resize", reposition_fn);
-    });
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(schedule_position) : null;
 
-    SimpleCalendar.add_event(window, "scroll", reposition_fn);
-    field.event_cleanup_fns.push(function () {
-        SimpleCalendar.remove_event(window, "scroll", reposition_fn);
-    });
-};
+    for (const element of ancestors) {
+        element.addEventListener('scroll', schedule_position, options);
+        observer?.observe(element);
+    }
+
+    observer?.observe(field);
+    observer?.observe(calendar);
+    window.addEventListener('resize', schedule_position, options);
+    window.addEventListener('scroll', schedule_position, options);
+    viewport?.addEventListener('resize', schedule_position, options);
+    viewport?.addEventListener('scroll', schedule_position, options);
+
+    field.calendar_observation_cleanup = () => {
+        controller.abort();
+        observer?.disconnect();
+
+        if (frame !== null) {
+            cancelAnimationFrame(frame);
+        }
+    };
+}; // add_observation_events
 
 /**
- * The function is an auxiliary function for getting scrollable ancentors.
+ * Lists field ancestors that can affect the field's viewport position.
  *
  * @protected
  *
  * @param {HTMLElement} field
- * The target input field with the calendar.
+ * The field from which to walk the ancestor chain.
  *
- * @returns {Array.<Object>}
- * Returns the list of scrollable containers.
+ * @returns {Element[]}
+ * The ancestors from the nearest parent to the document root.
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.collect_ancestors = function (field) {
-    field.ancestors = [];
-    
-    let parent = field.parentElement;
+    const ancestors = [];
 
-    while (parent) {
-        if (!field.ancestors.includes(parent)) {
-            field.ancestors.push(parent);
-        }
-        parent = parent.parentElement;
+    for (let parent = field.parentElement; parent; parent = parent.parentElement) {
+        ancestors.push(parent);
     }
 
-    if (!field.ancestors.includes(document.body)) {
-        field.ancestors.push(document.body);
-    }
-
-    if (!field.ancestors.includes(document.documentElement)) {
-        field.ancestors.push(document.documentElement);
-    }
-};
+    return ancestors;
+}; // collect_ancestors
 
 /**
- * The function is an auxiliary function for handling press of the Esc key and hiding the calendar if necessary.
+ * Closes the open popup on Escape and restores focus when necessary.
  *
  * @protected
- *
- * @param {Event} event
- * The event object describing the details of the event.
- *
  * @see SimpleCalendar.observe_escape
  *
- * @author
- * Oleg Schildt
+ * @param {KeyboardEvent} event
+ * The key press to check.
+ *
+ * @author Oleg Schildt
  */
 SimpleCalendar.handle_escape = function (event) {
-    if (event.keyCode != 27) return;
+    if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing || !SimpleCalendar.calendar?.my_field) {
+        return;
+    }
 
-    SimpleCalendar.hide();
-};
+    event.preventDefault();
+    SimpleCalendar.hide(true);
+}; // handle_escape
 
 /**
- * The function activates observing the Esc press.
+ * Registers the Escape handler. Repeated calls use the same listener.
  *
  * @protected
- *
  * @see SimpleCalendar.handle_escape
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
 SimpleCalendar.observe_escape = function () {
     SimpleCalendar.add_event(window, 'keydown', SimpleCalendar.handle_escape);
-};
+}; // observe_escape
 
 /**
- * Callback function called when the calendar is shown or hidden.
+ * A callback invoked when the calendar actually opens or closes.
  *
  * @callback hide_show_handler_callback
  *
- * @author
- * Oleg Schildt
+ * @author Oleg Schildt
  */
- 
-

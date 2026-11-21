@@ -1,80 +1,78 @@
-<!DOCTYPE html>
-<html lang="en" style="height:100%">
-<head>
-<title>Calendar</title>
+<!doctype html>
+<html lang="en" style="height: 100%">
+    <head>
+        <title>Calendar</title>
 
-<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<style>
-body,
-td,
-input
-{
-  font-size: 50px;
-}
-</style>
+        <style>
+            body,
+            td,
+            input {
+                font-size: clamp(16px, 7vw, 50px);
+            }
 
-<link rel="stylesheet" href="calendar.css?d=3671556" type="text/css"/>
+            input {
+                box-sizing: border-box;
+                max-width: calc(100vw - 24px);
+            }
+        </style>
 
-<script type='text/JavaScript' src='calendar.js'></script>
+        <link rel="stylesheet" href="calendar.css?d=3671556" type="text/css" />
 
-<script type='text/JavaScript'>
-var config = {
-  format: 'd.m.Y',
-  start_year: 1970,
-  end_year: 2030
-};
+        <script type="text/JavaScript" src="calendar.js"></script>
 
-window.onload = function () {
-  SimpleCalendar.observe_escape();
+        <script type="text/JavaScript">
+            var config = {
+              format: 'd.m.Y',
+              start_year: 1970,
+              end_year: 2030
+            };
 
-  SimpleCalendar.assign("begin_date", config);
-  SimpleCalendar.assign("end_date", config);
+            window.onload = function () {
+              SimpleCalendar.observe_escape();
 
-  SimpleCalendar.assign("date1", config);
-  SimpleCalendar.assign("date2", config);
-}
+              SimpleCalendar.assign("#begin_date", config);
+              SimpleCalendar.assign("#end_date", config);
 
-</script>
+              SimpleCalendar.assign("#date1", config);
+              SimpleCalendar.assign("#date2", config);
+            }
+        </script>
+    </head>
 
-</head>
+    <body style="height: 100%; padding: 0; margin: 0">
+        <table style="width: 100%; height: 100%">
+            <tr>
+                <td style="vertical-align: top; text-align: center">
+                    <input type="text" name="date1" id="date1" />
+                </td>
+            </tr>
 
-<body style="height:100%;padding:0;margin:0">
-<table style="width:100%;height:100%">
-<tr>
-<td style="vertical-align: top;text-align:center">
-<input type="text" name="date1" id="date1">
-</td>
-</tr>
+            <tr>
+                <td style="vertical-align: middle; text-align: center">
+                    <h2>Calendar</h2>
 
-<tr>
-<td style="vertical-align: middle;text-align:center">
+                    <table style="margin: 0 auto">
+                        <tr>
+                            <td>Date range:</td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" name="begin_date" id="begin_date" value="30.12.1998" /></td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" name="end_date" id="end_date" /></td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
 
-  <h2>Calendar</h2>
-  
-  <table style="margin:0 auto">
-  <tr>
-    <td>Date range:</td>
-  </tr>
-  <tr>
-    <td><input type="text" name="begin_date" id="begin_date" value="30.12.1998"></td>
-  </tr>
-  <tr>
-    <td><input type="text" name="end_date" id="end_date"></td>
-  </tr>
-  </table>
-
-</td>
-</tr>
-
-<tr>
-<td style="vertical-align: bottom;text-align:center">
-<input type="text" name="date2" id="date2">
-</td>
-</tr>
-</table>
-
-
-
-</body>
+            <tr>
+                <td style="vertical-align: bottom; text-align: center">
+                    <input type="text" name="date2" id="date2" />
+                </td>
+            </tr>
+        </table>
+    </body>
 </html>

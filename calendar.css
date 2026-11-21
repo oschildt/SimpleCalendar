@@ -1,33 +1,28 @@
 .calendar_container {
     display: none;
-    position: relative;
-    border: 0px dashed green;
+    position: fixed;
+    width: max-content;
+    max-width: var(--calendar-available-width, 100vw);
+    box-sizing: border-box;
+    overflow: auto;
+    box-shadow: 5px 5px 10px #000000;
+    z-index: 1000000000;
 }
 
 .calendar_container table {
-    width: 190px !important;
+    width: min(190px, var(--calendar-available-width, 100vw)) !important;
+    box-sizing: border-box;
     table-layout: fixed !important;
     border: 1px solid gray !important;
     background-color: white !important;
-    -webkit-box-shadow: 5px 5px 10px #000000 !important;
-    -moz-box-shadow: 5px 5px 10px #000000 !important;
-    box-shadow: 5px 5px 10px #000000 !important;
     border-spacing: 1px !important;
     border-collapse: separate !important;
-    position: absolute !important;
-    z-index: 1000000000 !important;
-    top: 0;
-    left: 0;
 }
 
-.calendar_container select::-ms-expand {
-    display: none;
-}
-
-body .calendar_container td {
+body .calendar_container td,
+body .calendar_container th {
     padding: 0px !important;
     border: 0px !important;
-    cursor: pointer;
     opacity: 0.8;
     text-align: center !important;
     vertical-align: middle !important;
@@ -45,13 +40,13 @@ body .calendar_container td {
 }
 
 .calendar_container td.calendar_head {
-    background-color: #5182B5;
-    background-image: -webkit-gradient(linear, 50% 0, 50% 100%, color-stop(0%, #386CA3), color-stop(100%, #729CC6));
-    background-image: -webkit-linear-gradient(to top, #386CA3, #729CC6);
-    background-image: -moz-linear-gradient(to top, #386CA3, #729CC6);
-    background-image: -o-linear-gradient(to top, #386CA3, #729CC6);
-    background-image: -ms-linear-gradient(to top, #386CA3, #729CC6);
-    background-image: linear-gradient(to top, #386CA3, #729CC6);
+    background-color: #5182b5;
+    background-image: -webkit-gradient(linear, 50% 0, 50% 100%, color-stop(0%, #386ca3), color-stop(100%, #729cc6));
+    background-image: -webkit-linear-gradient(to top, #386ca3, #729cc6);
+    background-image: -moz-linear-gradient(to top, #386ca3, #729cc6);
+    background-image: -o-linear-gradient(to top, #386ca3, #729cc6);
+    background-image: -ms-linear-gradient(to top, #386ca3, #729cc6);
+    background-image: linear-gradient(to top, #386ca3, #729cc6);
     padding: 0px;
 }
 
@@ -64,9 +59,7 @@ body .calendar_container td {
 
 .calendar_container .arrow_right,
 .calendar_container .arrow_left {
-    outline: none;
     resize: none;
-    outline-width: 0;
     cursor: pointer;
     border: 0;
     background-color: transparent;
@@ -92,6 +85,18 @@ body .calendar_container td {
     transform: scale(-1, 1);
 }
 
+.calendar_container button:focus-visible,
+.calendar_container select:focus-visible {
+    outline: 2px solid #142d4e !important;
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 3px white;
+}
+
+.calendar_container button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
 .calendar_container select.month_selector,
 .calendar_container select.year_selector {
     font-family: Arial !important;
@@ -104,42 +109,55 @@ body .calendar_container td {
     -webkit-appearance: none !important;
     box-sizing: border-box !important;
     display: block !important;
-    outline: none !important;
     resize: none !important;
     cursor: pointer !important;
-    outline-width: 0 !important;
     padding: 0px !important;
     height: auto !important;
 }
 
 .calendar_container select.month_selector {
     flex: 1 1 50px;
+    min-width: 0;
     text-align-last: center;
     margin-right: 5px;
 }
 
 .calendar_container select.year_selector {
     flex: 0 0 40px;
+    min-width: 0;
     text-align-last: center;
 }
 
 .calendar_container td.day {
-    background-color: #88D1F1;
+    background-color: #88d1f1;
     height: 23px;
 }
 
-.calendar_container td.weekday {
+.calendar_container .day button {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.calendar_container th.weekday {
     background-color: #bbbbbb;
     font-weight: bold;
     height: 18px;
 }
 
 .calendar_container td.day.weekend {
-    background-color: #87C540;
+    background-color: #87c540;
 }
 
 .calendar_container td.day.holiday {
-    background-color: #EB939A;
+    background-color: #eb939a;
 }
 
 .calendar_container td.day.other_month {
@@ -151,61 +169,65 @@ body .calendar_container td {
 }
 
 .calendar_container td.day.today {
-    background-color: #FFD96A;
+    background-color: #ffd96a;
 }
 
 .calendar_container td.day.selected_date {
-    background-color: #4577AB;
-    color: white;
-    font-weight: bold;
+    background-color: #4577ab;
 }
 
 .calendar_container td.day:hover {
     opacity: 1;
-    background-color: #4577AB;
+    background-color: #4577ab;
+}
+
+.calendar_container td.day.selected_date button,
+.calendar_container td.day:hover button {
     color: white;
+    font-weight: bold;
 }
 
 @media (max-width: 1100px) {
     .calendar_container table {
-        width: 660px !important;
+        width: min(660px, var(--calendar-available-width, 100vw)) !important;
         border-spacing: 5px !important;
     }
 
-    body .calendar_container td {
-        font-size: 42px !important;
+    body .calendar_container td,
+    body .calendar_container th {
+        font-size: clamp(18px, 6.4vw, 42px) !important;
     }
 
     body .calendar_container td.day {
-        height: 70px !important;
+        height: clamp(35px, 10.6vw, 70px) !important;
     }
 
-    body .calendar_container td.weekday {
-        height: 64px !important;
+    body .calendar_container th.weekday {
+        height: clamp(28px, 9.7vw, 64px) !important;
     }
 
     .calendar_container .calendar_head_area {
-        margin: 14px 0px 14px 0px !important;
+        margin: clamp(4px, 2.1vw, 14px) 0 !important;
     }
 
     .calendar_container .arrow_right,
     .calendar_container .arrow_left {
-        flex: 0 0 80px !important;
-        font-size: 50px !important;
-        line-height: 60px !important;
+        flex: 0 0 min(12.2%, 80px) !important;
+        font-size: clamp(20px, 7.6vw, 50px) !important;
+        line-height: clamp(28px, 9.1vw, 60px) !important;
     }
 
     .calendar_container select.month_selector,
     .calendar_container select.year_selector {
-        font-size: 44px !important;
+        font-size: clamp(16px, 6.7vw, 44px) !important;
     }
 
     .calendar_container select.month_selector {
-        flex: 1 0 200px !important;
-        margin-right: 16px !important;
+        flex: 1 1 0 !important;
+        margin-right: clamp(5px, 2.4vw, 16px) !important;
     }
 
     .calendar_container select.year_selector {
-        flex: 0 0 135px !important;
+        flex: 0 0 min(21%, 135px) !important;
     }
-} 
+}
