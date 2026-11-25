@@ -1,0 +1,343 @@
+html,
+body {
+    text-size-adjust: none;
+    font-family: Arial Narrow;
+    font-size: 18px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body,
+p,
+h1,
+h2,
+h3,
+b,
+td,
+th,
+button,
+input,
+select,
+textarea {
+    font-family: Arial Narrow;
+    font-size: 18px;
+}
+
+a:link,
+a:active,
+a:visited,
+a:hover {
+    font-family: Arial Narrow;
+    font-size: 18px;
+    color: #0c5297;
+}
+
+a:hover {
+    color: #107bba;
+}
+
+h1 {
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 22px;
+}
+
+h3 {
+    font-size: 20px;
+}
+
+.content {
+    width: 100%;
+    margin: 0 auto;
+    padding: 8px 16px 48px;
+    padding-top: 8px;
+    box-sizing: border-box;
+}
+
+.header {
+    width: 100%;
+    border: 1px solid gray;
+    margin: 0 auto;
+    background-color: #2f4b60;
+    border-bottom: 1px solid gray;
+    height: 80px;
+    box-sizing: border-box;
+}
+
+.left_links {
+    float: left;
+}
+
+.right_links {
+    float: right;
+}
+
+.left_links p,
+.right_links p {
+    margin: 3px 0 3px 0;
+}
+
+.language_switcher {
+    text-align: center;
+}
+
+table tr td {
+    padding: 5px;
+    word-break: break-word;
+    box-sizing: border-box;
+}
+
+.basic_table {
+    box-sizing: border-box;
+}
+
+.basic_table tr td:first-child {
+    color: #333;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.basic_table tr td {
+    vertical-align: top;
+    padding: 3px 8px 3px 0px;
+}
+
+.example_table {
+    box-sizing: border-box;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.example_table td,
+.example_table th {
+    border: 1px solid #bbb;
+}
+
+.example_table th {
+    padding: 4px;
+    background-color: #ddd;
+}
+
+.form_table {
+    box-sizing: border-box;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.form_table td,
+.form_table th {
+    border: 1px solid #bbb;
+}
+
+.form_table th {
+    padding: 4px;
+    background-color: #ddd;
+}
+
+.error {
+    font-weight: bold;
+    color: red;
+}
+
+.success {
+    font-weight: bold;
+    color: green;
+}
+
+.optional {
+    color: #666;
+}
+
+.warning {
+    font-weight: bold;
+    color: maroon;
+}
+
+input,
+select,
+textarea {
+    border: 1px solid #bbb;
+    background-color: white;
+    box-sizing: border-box;
+    padding: 3px;
+    width: 200px;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+    appearance: none;
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid gray;
+    background-color: white;
+    vertical-align: middle;
+    cursor: pointer;
+}
+
+input[type='checkbox'] {
+    --checkbox-check-color: #333;
+    border-radius: 0;
+}
+
+input[type='radio'] {
+    --radio-dot-color: #333;
+    border-radius: 50%;
+}
+
+input[type='checkbox']::before,
+input[type='radio']::before {
+    content: '';
+    box-sizing: border-box;
+    visibility: hidden;
+}
+
+input[type='checkbox']::before {
+    width: 6px;
+    height: 11px;
+    border-right: 2px solid var(--checkbox-check-color);
+    border-bottom: 2px solid var(--checkbox-check-color);
+    transform: translateY(-2px) rotate(45deg);
+}
+
+input[type='radio']::before {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--radio-dot-color);
+}
+
+input[type='checkbox']:checked::before,
+input[type='radio']:checked::before {
+    visibility: visible;
+}
+
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+    outline: 2px solid #0078d7;
+    outline-offset: 2px;
+}
+
+textarea {
+    height: 150px;
+    resize: none;
+    display: block;
+}
+
+button,
+input[type='submit'],
+input[type='reset'],
+input[type='button'] {
+    border: 1px solid #bbb;
+    background-color: #ddd;
+    width: auto;
+    padding: 3px 20px;
+    cursor: pointer;
+}
+
+button:hover,
+input[type='submit']:hover,
+input[type='reset']:hover,
+input[type='button']:hover {
+    background-color: #eee;
+}
+
+#loading_indicator {
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Centers the shared progress indicator above the current example. */
+._sys_load_lightbox {
+    display: none;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0%;
+    left: 0%;
+    background: none repeat scroll 0 0 rgba(0, 0, 0, 0.5);
+    z-index: 100000;
+}
+
+._sys_load_lightbox > div {
+    vertical-align: middle;
+    display: table-cell;
+    text-align: center;
+}
+
+._sys_load_lightbox > div > div {
+    display: inline-block;
+    position: relative;
+    padding: 5px 0px 13px 0px;
+    background: #fff;
+    box-shadow: 0 0 10px #fff;
+    border-radius: 4px;
+    width: 400px;
+    max-width: calc(100vw - 32px);
+    text-align: center;
+}
+
+pre {
+    word-break: break-all;
+    white-space: pre-wrap;
+    font-family: 'Courier New';
+    font-size: 16px;
+}
+
+code {
+    font-family: 'Courier New';
+    font-size: 16px;
+}
+
+.code {
+    font-family: 'Courier New';
+    font-size: 16px;
+    padding: 5px;
+    white-space: pre-wrap;
+    border: 1px solid #cccccc;
+    color: #333;
+    background-color: #fcfcfc;
+    max-width: 1100px;
+}
+
+.message_block {
+    margin-bottom: 10px;
+}
+
+.message_header {
+    border-top: 1px solid #cccccc;
+    border-right: 1px solid #cccccc;
+    border-left: 1px solid #cccccc;
+    color: gray;
+    background-color: #eeeeee;
+    font-weight: bold;
+    padding: 5px;
+}
+
+.message_body {
+    border: 1px solid #cccccc;
+    color: gray;
+    background-color: #fcfcfc;
+    white-space: pre-wrap;
+    padding: 5px;
+    font-family: 'Courier New';
+    font-size: 16px;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td,
+th {
+    padding: 2px;
+}

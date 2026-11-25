@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en" style="height: 100%">
+    <head>
+        <title>Calendar</title>
+
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <script src="calendar.js"></script>
+
+        <link rel="stylesheet" href="calendar.css" type="text/css" />
+        <link rel="stylesheet" href="examples.css" type="text/css" />
+
+        <script>
+            var config = {
+                format: 'd.m.Y',
+                holidays: [new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)],
+                start_year: 1970,
+                end_year: 2030,
+            };
+
+            window.onload = function () {
+                SimpleCalendar.observe_escape();
+
+                SimpleCalendar.assign('.date_picker', config);
+            };
+        </script>
+
+        <style>
+            textarea:focus,
+            input:focus {
+                outline: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="header"></div>
+
+        <div style="margin: 0 auto; width: 400px; position: fixed; top: 4px; left: 4px; z-index: 100; background-color: #2f4b60; color: white; padding: 4px">
+            <input class="date_picker" type="text" name="fix_date_left_top" id="fix_date_left_top" /> sticky left
+        </div>
+
+        <div style="margin: 0 auto; width: 400px; position: fixed; top: 4px; right: 4px; z-index: 100; color: white; background-color: #2f4b60; padding: 4px; text-align: right">
+            sticky left <input class="date_picker" type="text" name="fix_date_right_top" id="fix_date_right_top" />
+        </div>
+
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <div style="margin: 0px 40px 0px 40px">Scroll down</div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+
+        <div style="border: 2px solid gray; overflow: auto; height: 640px; margin: 0px 40px 0px 40px; padding: 5px">
+            <div style="margin: 0 auto; width: 400px; position: sticky; top: 0; color: white; background-color: #2f4b60; padding: 4px; z-index: 10000">
+                <input class="date_picker" type="text" name="fix_date2" id="fix_date2" /> sticky inside
+            </div>
+
+            <table style="width: 100%; height: 600px">
+                <tr>
+                    <td style="vertical-align: top; text-align: left; position: relative"><input class="date_picker" type="text" name="date11" id="date11" /> left top<br /></td>
+                    <td style="text-align: center">
+                        <h1>Calendar demonstration</h1>
+
+                        <table style="margin: 0 auto">
+                            <tr>
+                                <td><input class="date_picker" type="text" name="begin_date" id="begin_date" value="30.12.1998" /></td>
+                                <td><input class="date_picker" type="text" name="end_date" id="end_date" /></td>
+                            </tr>
+                        </table>
+
+                        <br />
+                        <br />
+                        Area with inner scroll<br /><br />
+
+                        Scroll down
+                        <br />
+                        <br />
+                    </td>
+                    <td style="vertical-align: top; text-align: right">right top <input class="date_picker" type="text" name="date12" id="date12" /></td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: bottom; text-align: left"><input class="date_picker" type="text" name="date21" id="date21" /> left bottom</td>
+                    <td></td>
+                    <td style="vertical-align: bottom; text-align: right">right bottom <input class="date_picker" type="text" name="date22" id="date22" /></td>
+                </tr>
+            </table>
+
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            Scroll down
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+
+            <div style="position: relative; height: 400px">
+                <div style="position: absolute; top: 15px; right: 115px">Absolute positioned field</div>
+                <input class="date_picker" type="text" name="date33" id="date33" style="position: absolute; top: 40px; right: 75px" />
+
+                <div style="position: absolute; border: 2px solid gray; width: 250px; height: 100px; top: 220px; right: 40px; padding: 8px">
+                    In an absolute positioned container<br />
+                    <input class="date_picker" type="text" name="date44" id="date44" />
+                </div>
+            </div>
+
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            Scroll down
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+
+            <input class="date_picker" type="text" name="begin_date2" id="begin_date2" /> - <input class="date_picker" type="text" name="end_date2" id="end_date2" /><br />
+
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            Scroll down
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+
+            <input class="date_picker" type="text" name="date99" id="date99" /> left bottom
+        </div>
+
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <div style="margin: 0px 40px 0px 40px">Scroll down</div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+
+        <div style="margin: 0 auto; width: 400px; position: fixed; bottom: 4px; left: 4px; z-index: 100; background-color: #2f4b60; color: white; padding: 4px">
+            <input class="date_picker" type="text" name="fix_date_left_bottom" id="fix_date_left_bottom" /> sticky left
+        </div>
+
+        <div style="margin: 0 auto; width: 400px; position: fixed; bottom: 4px; right: 4px; z-index: 100; color: white; background-color: #2f4b60; padding: 4px; text-align: right">
+            sticky left <input class="date_picker" type="text" name="fix_date_right_bottom" id="fix_date_right_bottom" />
+        </div>
+    </body>
+</html>

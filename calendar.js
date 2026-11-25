@@ -440,7 +440,11 @@ SimpleCalendar.string_to_time = function (str, format, utc = false, base_date) {
 }; // string_to_time
 
 /**
- * Positions the shared calendar next to its active field within the visible viewport.
+ * Places the calendar below its field, aligned with the field's left edge.
+ * Uses the upper edge when the calendar cannot fit below and more space is available above.
+ * Uses the right edge when the viewport or an ancestor clips the default horizontal placement.
+ * Applies the horizontal inset configured by the responsive styles.
+ * Includes the placement margins when comparing available space.
  *
  * @protected
  *
@@ -456,29 +460,90 @@ SimpleCalendar.position_calendar = function (field) {
         return;
     }
 
-    const viewport = window.visualViewport;
-    const left = viewport?.offsetLeft ?? 0;
-    const top = viewport?.offsetTop ?? 0;
-    const width = Math.min(document.documentElement.clientWidth, viewport?.width ?? Infinity);
-    const height = Math.min(document.documentElement.clientHeight, viewport?.height ?? Infinity);
-    const right = left + width;
-    const bottom = top + height;
-
-    calendar.style.setProperty('--calendar-available-width', width + 'px');
-    calendar.style.maxHeight = height + 'px';
-
     const field_rect = field.getBoundingClientRect();
-    const popup_rect = calendar.getBoundingClientRect();
-    const below = field_rect.bottom + 2;
-    const above = field_rect.top - 4;
-    const use_above = below + popup_rect.height > bottom && above - top > bottom - below;
-    const preferred_x = field_rect.left + popup_rect.width <= right
-        ? field_rect.left
-        : field_rect.right - popup_rect.width;
-    const preferred_y = use_above ? above - popup_rect.height : below;
+    const anchor = calendar.parentElement;
+    const viewport = window.visualViewport;
+    let left = viewport?.offsetLeft ?? 0;
+    let top = viewport?.offsetTop ?? 0;
+    let right = left + Math.min(document.documentElement.clientWidth, viewport?.width ?? Infinity);
+    let bottom = top + Math.min(document.documentElement.clientHeight, viewport?.height ?? Infinity);
 
-    calendar.style.left = Math.max(left, Math.min(preferred_x, right - popup_rect.width)) + 'px';
-    calendar.style.top = Math.max(top, Math.min(preferred_y, bottom - popup_rect.height)) + 'px';
+    // Use the visible area of the popup's own container for the initial placement.
+    for (let parent = anchor; parent && parent !== document.body;) {
+        const style = getComputedStyle(parent);
+
+        if (style.overflowX !== 'visible' || style.overflowY !== 'visible') {
+            const rect = parent.getBoundingClientRect();
+
+            if (style.overflowX !== 'visible') {
+                const inner_left = rect.left + parent.clientLeft;
+
+                left = Math.max(left, inner_left);
+                right = Math.min(right, inner_left + parent.clientWidth);
+            }
+
+            if (style.overflowY !== 'visible') {
+                const inner_top = rect.top + parent.clientTop;
+
+                top = Math.max(top, inner_top);
+                bottom = Math.min(bottom, inner_top + parent.clientHeight);
+            }
+        }
+
+        if (style.position === 'fixed') {
+            break;
+        }
+
+        parent = style.position === 'absolute' ? parent.offsetParent : parent.parentElement;
+    }
+
+    const available_width = Math.max(0, right - left);
+    const requested_inset = parseFloat(getComputedStyle(calendar).getPropertyValue('--calendar-side-inset')) || 0;
+    const side_inset = Math.max(0, Math.min(requested_inset, available_width / 2));
+    left += side_inset;
+    right -= side_inset;
+
+    calendar.style.setProperty('--calendar-available-width', (available_width - 2 * side_inset) + 'px');
+
+    calendar.classList.remove('calendar_container_above');
+
+    calendar.classList.add('calendar_container_below');
+
+    const popup_rect = calendar.getBoundingClientRect();
+    const below_margin = Math.max(0, parseFloat(getComputedStyle(calendar).marginTop));
+    const below = Math.max(0, bottom - Math.max(top, field_rect.bottom) - below_margin);
+    const above = Math.max(0, Math.min(bottom, field_rect.top) - top);
+    let use_above = popup_rect.height > below && above > below;
+
+    if (use_above) {
+        calendar.classList.replace('calendar_container_below', 'calendar_container_above');
+
+        const above_margin = Math.max(0, -parseFloat(getComputedStyle(calendar).marginTop));
+        use_above = above - above_margin > below;
+
+        if (!use_above) {
+            calendar.classList.replace('calendar_container_above', 'calendar_container_below');
+        }
+    }
+
+    const aligned_x = field_rect.left + popup_rect.width <= right ? field_rect.left : field_rect.right - popup_rect.width;
+    let x = Math.max(left, Math.min(aligned_x, right - popup_rect.width));
+    let y = use_above ? field_rect.top - popup_rect.height : field_rect.bottom;
+
+    if (calendar.style.position === 'absolute') {
+        if (anchor === document.body && getComputedStyle(anchor).position === 'static') {
+            x += window.scrollX;
+            y += window.scrollY;
+        } else {
+            const rect = anchor.getBoundingClientRect();
+
+            x += anchor.scrollLeft - rect.left - anchor.clientLeft;
+            y += anchor.scrollTop - rect.top - anchor.clientTop;
+        }
+    }
+
+    calendar.style.left = x + 'px';
+    calendar.style.top = y + 'px';
 }; // position_calendar
 
 /**
@@ -870,7 +935,8 @@ SimpleCalendar.is_holiday = function (date, config, utc = false) {
 }; // is_holiday
 
 /**
- * Attaches the shared calendar to a field and populates its controls.
+ * Mounts the calendar in the field's layout and populates its controls.
+ * Fixed fields use viewport positioning so the popup can follow them.
  *
  * @protected
  * @see SimpleCalendar.detach_from_calender
@@ -885,6 +951,29 @@ SimpleCalendar.attach_to_calender = function (field) {
     const config = field.calendar_config;
     const month_select = calendar.querySelector('.month_selector');
     const year_select = calendar.querySelector('.year_selector');
+    const position = getComputedStyle(field).position;
+    const parent = position === 'absolute' ? field.offsetParent : field.parentElement;
+    let anchor = position === 'fixed' ? document.body : (parent?.closest('label')?.parentElement ?? parent ?? document.body);
+
+    while (anchor !== document.body && getComputedStyle(anchor).display === 'contents') {
+        anchor = anchor.parentElement ?? document.body;
+    }
+
+    if (anchor !== document.body && getComputedStyle(anchor).position === 'static') {
+        const value = anchor.style.getPropertyValue('position');
+        const priority = anchor.style.getPropertyPriority('position');
+
+        anchor.style.setProperty('position', 'relative', 'important');
+
+        calendar.restore_anchor = () => anchor.style.setProperty('position', value, priority);
+    }
+
+    calendar.field_position = position;
+    calendar.style.position = position === 'fixed' ? 'fixed' : 'absolute';
+
+    if (calendar.parentElement !== anchor) {
+        anchor.append(calendar);
+    }
 
     calendar.my_field = field;
     field.my_calendar = calendar;
@@ -913,7 +1002,7 @@ SimpleCalendar.attach_to_calender = function (field) {
 }; // attach_to_calender
 
 /**
- * Detaches the shared calendar and removes the field's positioning observers.
+ * Returns the shared popup to the document body and releases its field and observers.
  *
  * @protected
  * @see SimpleCalendar.attach_to_calender
@@ -930,7 +1019,17 @@ SimpleCalendar.detach_from_calender = function (field) {
     field.my_calendar = null;
 
     clearTimeout(calendar.blur_timeout);
+
     SimpleCalendar.remove_observation_events(field);
+
+    if (calendar.parentElement !== document.body) {
+        document.body.append(calendar);
+    }
+
+    calendar.restore_anchor?.();
+
+    calendar.restore_anchor = null;
+    calendar.style.position = '';
 }; // detach_from_calender
 
 /**
@@ -952,7 +1051,9 @@ SimpleCalendar.show = function (field) {
     }
 
     if (calendar.my_field === field) {
-        SimpleCalendar.position_calendar(field);
+        if (calendar.field_position === 'sticky' || calendar.field_position === 'fixed') {
+            SimpleCalendar.position_calendar(field);
+        }
 
         return;
     }
@@ -1221,7 +1322,7 @@ SimpleCalendar.remove_observation_events = function (field) {
 }; // remove_observation_events
 
 /**
- * Updates the popup position when its anchor or visible area changes.
+ * Repositions popups on resize and tracks sticky or fixed fields on scroll.
  *
  * @protected
  *
@@ -1234,6 +1335,7 @@ SimpleCalendar.add_observation_events = function (field) {
     const calendar = SimpleCalendar.calendar;
     const viewport = window.visualViewport;
     const ancestors = SimpleCalendar.collect_ancestors(field);
+    const track_scroll = calendar.field_position === 'sticky' || calendar.field_position === 'fixed';
     const controller = new AbortController();
     const options = { signal: controller.signal, passive: true };
     let frame = null;
@@ -1248,23 +1350,29 @@ SimpleCalendar.add_observation_events = function (field) {
         }
     };
 
-    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(schedule_position) : null;
+    const resize_observer = typeof ResizeObserver === 'function' ? new ResizeObserver(schedule_position) : null;
 
     for (const element of ancestors) {
-        element.addEventListener('scroll', schedule_position, options);
-        observer?.observe(element);
+        if (track_scroll) {
+            element.addEventListener('scroll', schedule_position, options);
+        }
+
+        resize_observer?.observe(element);
     }
 
-    observer?.observe(field);
-    observer?.observe(calendar);
+    if (track_scroll) {
+        window.addEventListener('scroll', schedule_position, options);
+        viewport?.addEventListener('scroll', schedule_position, options);
+    }
+
+    resize_observer?.observe(field);
+    resize_observer?.observe(calendar);
     window.addEventListener('resize', schedule_position, options);
-    window.addEventListener('scroll', schedule_position, options);
     viewport?.addEventListener('resize', schedule_position, options);
-    viewport?.addEventListener('scroll', schedule_position, options);
 
     field.calendar_observation_cleanup = () => {
         controller.abort();
-        observer?.disconnect();
+        resize_observer?.disconnect();
 
         if (frame !== null) {
             cancelAnimationFrame(frame);
