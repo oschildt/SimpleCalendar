@@ -7,7 +7,7 @@
 
 ## Demo
 
-http://php-smart-factory.org/calendar/
+https://php-smart-factory.org/calendar/
 
 ## How to use
 
