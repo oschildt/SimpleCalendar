@@ -6,7 +6,7 @@
     box-sizing: border-box;
     overflow: auto;
     box-shadow: 5px 5px 10px #000000;
-    z-index: 1000000000;
+    z-index: 1000;
 }
 
 .calendar_container_above {
@@ -48,13 +48,13 @@ body .calendar_container th {
 }
 
 .calendar_container td.calendar_head {
-    background-color: #5182b5;
-    background-image: -webkit-gradient(linear, 50% 0, 50% 100%, color-stop(0%, #386ca3), color-stop(100%, #729cc6));
-    background-image: -webkit-linear-gradient(to top, #386ca3, #729cc6);
-    background-image: -moz-linear-gradient(to top, #386ca3, #729cc6);
-    background-image: -o-linear-gradient(to top, #386ca3, #729cc6);
-    background-image: -ms-linear-gradient(to top, #386ca3, #729cc6);
-    background-image: linear-gradient(to top, #386ca3, #729cc6);
+    background-color: #2f4b60;
+    background-image: -webkit-gradient(linear, 50% 0, 50% 100%, color-stop(0%, #243b4c), color-stop(100%, #3a5b74));
+    background-image: -webkit-linear-gradient(to top, #243b4c, #3a5b74);
+    background-image: -moz-linear-gradient(to top, #243b4c, #3a5b74);
+    background-image: -o-linear-gradient(to top, #243b4c, #3a5b74);
+    background-image: -ms-linear-gradient(to top, #243b4c, #3a5b74);
+    background-image: linear-gradient(to top, #243b4c, #3a5b74);
     padding: 0px;
 }
 
@@ -137,7 +137,7 @@ body .calendar_container th {
 }
 
 .calendar_container td.day {
-    background-color: #88d1f1;
+    background-color: #2CA6E1;
     height: 27px;
 }
 
@@ -161,11 +161,11 @@ body .calendar_container th {
 }
 
 .calendar_container td.day.weekend {
-    background-color: #87c540;
+    background-color: #3BC377;
 }
 
 .calendar_container td.day.holiday {
-    background-color: #eb939a;
+    background-color: #FF4B4B;
 }
 
 .calendar_container td.day.other_month {
@@ -210,7 +210,7 @@ body .calendar_container th {
 
     .calendar_container table {
         width: min(660px, var(--calendar-available-width, 100vw)) !important;
-        border-spacing: 5px !important;
+        border-spacing: 2px !important;
     }
 
     body .calendar_container td,

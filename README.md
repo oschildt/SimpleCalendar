@@ -9,8 +9,6 @@
 
 http://php-smart-factory.org/calendar/
 
-The local files *index.html* and *mobile.html* can also be used for testing.
-
 ## How to use
 
 ### Step 1
@@ -19,7 +17,7 @@ Include the files:
 
 ```
 <link rel="stylesheet" href="calendar.css" type="text/css"/>
-<script type='text/JavaScript' src='calendar.js'></script>
+<script src='calendar.js'></script>
 ```
 
 ### Step 2
@@ -29,6 +27,7 @@ Define config object:
 ```
 var config = {
   format: 'd.m.Y',
+  holidays: [new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)],
   start_year: 1970,
   end_year: 2030
 };
@@ -40,6 +39,10 @@ Initialize the fields with CSS selectors or pass the text input elements directl
 
 ```
 window.onload = function () {
+  SimpleCalendar.observe_escape();
+
+  SimpleCalendar.assign('.date_picker', config);
+
   SimpleCalendar.assign("#begin_date", config);
   SimpleCalendar.assign("#end_date", config);
 }
@@ -56,9 +59,9 @@ var config = {
   format: 'd.m.Y',
   start_year: 1970,
   end_year: 2030,
-  
+
   holidays: [new Date(1970, 6, 4), new Date(1970, 10, 24)],
-  
+
   month_names: [
     "January",
     "February",
@@ -73,7 +76,7 @@ var config = {
     "November",
     "December"
   ],
-  
+
   weekday_names: [
     "Mo",
     "Tu",

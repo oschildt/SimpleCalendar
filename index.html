@@ -37,12 +37,12 @@
     <body>
         <div class="header"></div>
 
-        <div style="margin: 0 auto; width: 400px; position: fixed; top: 4px; left: 4px; z-index: 100; background-color: #2f4b60; color: white; padding: 4px">
+        <div style="margin: 0 auto; width: 400px; position: fixed; top: 0px; left: 0px; z-index: 1500; background-color: #2f4b60; color: white; padding: 6px">
             <input class="date_picker" type="text" name="fix_date_left_top" id="fix_date_left_top" /> sticky left
         </div>
 
-        <div style="margin: 0 auto; width: 400px; position: fixed; top: 4px; right: 4px; z-index: 100; color: white; background-color: #2f4b60; padding: 4px; text-align: right">
-            sticky left <input class="date_picker" type="text" name="fix_date_right_top" id="fix_date_right_top" />
+        <div style="margin: 0 auto; width: 400px; position: fixed; top: 0px; right: 0px; z-index: 1800; color: white; background-color: #2f4b60; padding: 6px; text-align: right">
+            sticky right <input class="date_picker" type="text" name="fix_date_right_top" id="fix_date_right_top" />
         </div>
 
         <br />
@@ -65,15 +65,19 @@
         <br />
         <br />
 
-        <div style="border: 2px solid gray; overflow: auto; height: 640px; margin: 0px 40px 0px 40px; padding: 5px">
-            <div style="margin: 0 auto; width: 400px; position: sticky; top: 0; color: white; background-color: #2f4b60; padding: 4px; z-index: 10000">
+        <div style="text-align: center; margin-bottom: 5px">Area with inner scroll</div>
+        <div style="border: 2px solid gray; overflow: auto; height: 640px; margin: 0px 20px 0px 20px; padding: 5px">
+            <div style="margin: 0 auto; width: 300px; position: sticky; top: 0; color: white; background-color: #2f4b60; padding: 4px; z-index: 1100">
                 <input class="date_picker" type="text" name="fix_date2" id="fix_date2" /> sticky inside
             </div>
 
-            <table style="width: 100%; height: 600px">
+            <table style="width: 100%; height: 600px; margin-top: 5px">
                 <tr>
-                    <td style="vertical-align: top; text-align: left; position: relative"><input class="date_picker" type="text" name="date11" id="date11" /> left top<br /></td>
-                    <td style="text-align: center">
+                    <td style="min-width: 300px; vertical-align: top; text-align: left; position: relative"><input class="date_picker" type="text" name="date11" id="date11" /> left top<br /></td>
+                    <td style="min-width: 300px; vertical-align: top; text-align: right">right top <input class="date_picker" type="text" name="date12" id="date12" /></td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="text-align: center">
                         <h1>Calendar demonstration</h1>
 
                         <table style="margin: 0 auto">
@@ -91,11 +95,9 @@
                         <br />
                         <br />
                     </td>
-                    <td style="vertical-align: top; text-align: right">right top <input class="date_picker" type="text" name="date12" id="date12" /></td>
                 </tr>
                 <tr>
                     <td style="vertical-align: bottom; text-align: left"><input class="date_picker" type="text" name="date21" id="date21" /> left bottom</td>
-                    <td></td>
                     <td style="vertical-align: bottom; text-align: right">right bottom <input class="date_picker" type="text" name="date22" id="date22" /></td>
                 </tr>
             </table>
@@ -174,7 +176,11 @@
             <br />
             <br />
 
-            <input class="date_picker" type="text" name="begin_date2" id="begin_date2" /> - <input class="date_picker" type="text" name="end_date2" id="end_date2" /><br />
+            <input class="date_picker" type="text" name="begin_date2" id="begin_date2" /><br />
+
+            <br />
+
+            <input class="date_picker" type="text" name="end_date2" id="end_date2" /><br />
 
             <br />
             <br />
@@ -243,12 +249,12 @@
         <br />
         <br />
 
-        <div style="margin: 0 auto; width: 400px; position: fixed; bottom: 4px; left: 4px; z-index: 100; background-color: #2f4b60; color: white; padding: 4px">
+        <div style="margin: 0 auto; width: 400px; position: fixed; bottom: 0px; left: 0px; z-index: 100; background-color: #2f4b60; color: white; padding: 6px">
             <input class="date_picker" type="text" name="fix_date_left_bottom" id="fix_date_left_bottom" /> sticky left
         </div>
 
-        <div style="margin: 0 auto; width: 400px; position: fixed; bottom: 4px; right: 4px; z-index: 100; color: white; background-color: #2f4b60; padding: 4px; text-align: right">
-            sticky left <input class="date_picker" type="text" name="fix_date_right_bottom" id="fix_date_right_bottom" />
+        <div style="margin: 0 auto; width: 400px; position: fixed; bottom: 0px; right: 0px; z-index: 100; color: white; background-color: #2f4b60; padding: 6px; text-align: right">
+            sticky right <input class="date_picker" type="text" name="fix_date_right_bottom" id="fix_date_right_bottom" />
         </div>
     </body>
 </html>
